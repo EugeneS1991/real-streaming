@@ -451,13 +451,35 @@ APP_CONFIG__CORS__ALLOWED_ORIGINS=["https://yourdomain.com"]
 
 > **Note**: 
 > - Replace all placeholder values (`your_project_id`, `your_dataset_id`, etc.) with your actual values
-> - For `APP_CONFIG__CORS__ALLOWED_ORIGINS`, use the domain that will be connected to the Load Balancer
+> - For `APP_CONFIG__CORS__ALLOWED_ORIGINS`, **include brackets and quotes** as shown: `["https://yourdomain.com"]` - this is required for Pydantic to correctly parse the JSON array format
+> - `APP_CONFIG__CORS__ALLOWED_ORIGINS` specifies **all domains** that are allowed to send requests to your endpoint. List all domains (including subdomains) that will make requests to your API
+> - Use the domain that will be connected to the Load Balancer
 > - You can leave `APP_CONFIG__CORS__ALLOWED_ORIGINS` empty initially and set it after deploying and configuring the Load Balancer with your domain
 > - Use the same values you configured in your local `.env` file
 
 3. Click **"Create"** or **"Deploy"** to start the deployment
 
 > **Note**: The first deployment may take several minutes as Cloud Build builds the Docker image and deploys it to Cloud Run.
+
+#### Step 2.1: Verify Deployment and Test the API
+
+After the deployment completes:
+
+1. Go to your Cloud Run service page in Google Cloud Console
+2. Find the **Service URL** (it will look like `https://your-service-name-xxxxx-xx.a.run.app`)
+3. Open `{your-cloud-run-url}/docs` in your browser (e.g., `https://your-service-name-xxxxx-xx.a.run.app/docs`)
+4. You should see the Swagger UI documentation
+5. Test the API by sending a request:
+   - Find the `POST /api/v1/streaming/{stream_id}` endpoint
+   - Click **"Try it out"**
+   - Set `stream_id` to `1` (or any number)
+   - Fill in the request body using the schema shown in Swagger UI
+   - Click **"Execute"**
+   - You should receive a `200 OK` response with `{"status": "ok"}`
+
+![Cloud Run Swagger UI](docs/images/cloud_run_check.png)
+
+> *Screenshot showing Swagger UI on Cloud Run with successful API test request*
 
 ### Step 3: Reserve a Static IP Address
 
@@ -577,7 +599,7 @@ cp .env.template src/.env
 - `APP_CONFIG__WRITERS__STRATEGY`: Streaming strategy (`direct` for BigQuery Storage Write API, or `pubsub` for Pub/Sub)
 - `APP_CONFIG__WRITERS__BQ__DATASET_ID`: BigQuery dataset name
 - `APP_CONFIG__WRITERS__BQ__TABLE_ID`: BigQuery table name
-- `APP_CONFIG__CORS__ALLOWED_ORIGINS`: List of allowed origins for CORS (JSON array format)
+- `APP_CONFIG__CORS__ALLOWED_ORIGINS`: List of allowed origins for CORS (JSON array format). Specifies all domains that are allowed to send requests to your endpoint. Example: `["https://yourdomain.com","https://www.yourdomain.com"]`
 
 ---
 
