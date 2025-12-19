@@ -236,8 +236,6 @@ If you're using the **Direct streaming strategy** (`APP_CONFIG__WRITERS__STRATEG
 > *Screenshot showing the "Create Dataset" form with dataset ID and location configured*
 
 
-The application will automatically create the table with the correct schema, partitioning, and clustering when it first runs.
-
 > **Note**: The table will be automatically created by the application on first use. No manual table creation is required.
 
 ---
