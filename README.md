@@ -207,7 +207,7 @@ gcloud auth application-default login
 
 This will automatically configure credentials that will be used by the application. No need to set `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
 
-#### Cloud BigQuery Setup (Direct Strategy)
+### Cloud BigQuery Setup (Direct Strategy)
 
 > **Note**: For local development, we use the **Direct Strategy** (`APP_CONFIG__WRITERS__STRATEGY=direct`), which streams events directly to BigQuery using the BigQuery Storage Write API. This is the simplest setup for local testing.
 
