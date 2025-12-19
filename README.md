@@ -294,32 +294,49 @@ If you're using the **Pub/Sub strategy** (`APP_CONFIG__WRITERS__STRATEGY=pubsub`
 
 > **⚠️ Important**: Before setting up Pub/Sub strategy, you **must first** run the application with **Direct strategy** (`APP_CONFIG__WRITERS__STRATEGY=direct`) to create the BigQuery table. The Pub/Sub subscription requires an existing table to write data to BigQuery.
 
-### Step 1: Create a Pub/Sub Topic
+### Step 1: Configure Environment Variables
+
+Update your `src/.env` file to use Pub/Sub strategy:
+
+```bash
+# Change streaming strategy to pubsub
+APP_CONFIG__WRITERS__STRATEGY=pubsub
+
+# Configure Pub/Sub topic and subscription IDs
+APP_CONFIG__WRITERS__PUBSUB__TOPIC_ID=your_topic_id
+APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID=your_subscription_id
+```
+
+> **Note**: Replace `your_topic_id` and `your_subscription_id` with your actual Pub/Sub topic and subscription names. These will be created in the following steps.
+
+### Step 2: Create a Pub/Sub Topic
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com) → Pub/Sub → Topics
 2. Click **"Create Topic"**
-3. Enter the topic ID (must match `APP_CONFIG__WRITERS__PUBSUB__TOPIC_ID`)
+3. Enter the topic ID (must match `APP_CONFIG__WRITERS__PUBSUB__TOPIC_ID` from Step 1)
 4. Click **"Create"**
 
-> **Screenshot Placeholder 3**: Pub/Sub topic creation form in Google Cloud Console
-> *Description: Screenshot showing the "Create Topic" form with topic ID field filled in and settings configured*
+![Create Pub/Sub Topic](docs/images/create_topic.png)
 
-### Step 2: Create a BigQuery Subscription
+> *Screenshot showing the "Create Topic" form with topic ID field filled in and settings configured*
+
+### Step 3: Create a BigQuery Subscription
 
 For automatic loading from Pub/Sub to BigQuery:
 
-1. Navigate to your Pub/Sub topic (created in Step 1)
+1. Navigate to your Pub/Sub topic (created in Step 2)
 2. Click **"Create Subscription"**
-3. Enter subscription ID (must match `APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID`)
+3. Enter subscription ID (must match `APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID` from Step 1)
 4. Configure subscription settings:
    - **Delivery type**: Write to BigQuery
    - **Schema Configuration**: Use table schema
-   - **Write metadata**: True
+   - **Write metadata**: True (check this option)
 5. Select the existing BigQuery table (created when running with Direct strategy)
 6. Click **"Create"**
 
-> **Screenshot Placeholder 4**: Pub/Sub subscription creation form with BigQuery write configuration
-> *Description: Screenshot showing subscription creation form with "Write to BigQuery" delivery type, schema configuration, and write metadata settings*
+![Create BigQuery Subscription](docs/images/create_subscription.png)
+
+> *Screenshot showing subscription creation form with "Write to BigQuery" delivery type, "Use table schema" configuration, and "Write metadata" enabled*
 
 ---
 
