@@ -129,7 +129,7 @@ For production deployment, you need to enable and configure the following Google
                                         ┌───────────────────┐
                                         │     BigQuery      │
                                         └───────────────────┘
-
+ 
 ```
 
 ## Installation
@@ -231,7 +231,7 @@ If you're using the **Direct streaming strategy** (`APP_CONFIG__WRITERS__STRATEG
    - **Encryption**: Use Google-managed encryption key (default)
 6. Click **"Create Dataset"**
 
-> **Screenshot Placeholder**: BigQuery dataset creation form in Google Cloud Console
+> [BigQuery Dataset Creating](docs/images/architecture-diagram.png)
 > *Description: Screenshot showing the "Create Dataset" form with dataset ID and location configured*
 
 
