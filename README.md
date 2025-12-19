@@ -207,6 +207,10 @@ gcloud auth application-default login
 
 This will automatically configure credentials that will be used by the application. No need to set `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
 
+#### Cloud BigQuery Setup (Direct Strategy)
+
+> **Note**: For local development, we use the **Direct Strategy** (`APP_CONFIG__WRITERS__STRATEGY=direct`), which streams events directly to BigQuery using the BigQuery Storage Write API. This is the simplest setup for local testing.
+
 #### Step 4: Create BigQuery Dataset
 
 Before running the application, you need to create a BigQuery dataset:
@@ -278,59 +282,9 @@ You should see your test event data in the table:
 
 ---
 
-> **Note**: This project is designed to run on **Google Cloud Run**. For production deployment, see the [Production Deployment](#production-deployment-google-cloud-run) section.
+### Next Steps: Google Cloud Pub/Sub Setup
 
----
-
-## Configuration
-
-### Environment Variables
-
-The project includes a `.env.template` file with all configuration options. To configure the application:
-
-1. **Copy the template file**:
-```bash
-cp .env.template src/.env
-```
-
-2. **Edit `src/.env`** and update the values according to your environment.
-
-
-### Key Configuration Parameters
-
-#### Required Settings
-
-- `APP_CONFIG__ENVIRONMENT`: Application environment (`QA` for local development, `PROD` for production)
-- `APP_CONFIG__WRITERS__PROJECT_ID`: Your Google Cloud Project ID
-- `APP_CONFIG__WRITERS__STRATEGY`: Streaming strategy (`direct` for BigQuery Storage Write API, or `pubsub` for Pub/Sub)
-- `APP_CONFIG__WRITERS__BQ__DATASET_ID`: BigQuery dataset name
-- `APP_CONFIG__WRITERS__BQ__TABLE_ID`: BigQuery table name
-- `APP_CONFIG__CORS__ALLOWED_ORIGINS`: List of allowed origins for CORS (JSON array format)
-
----
-
-## Google Cloud BigQuery Setup (Direct Strategy)
-
-If you're using the **Direct streaming strategy** (`APP_CONFIG__WRITERS__STRATEGY=direct`), you need to set up Google Cloud BigQuery infrastructure.
-
-### Step 1: Create a BigQuery Dataset
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
-2. Click on your project name in the left sidebar
-3. Click **"Create Dataset"**
-4. Enter the dataset ID (must match `APP_CONFIG__WRITERS__BQ__DATASET_ID`)
-5. Configure dataset settings:
-   - **Data location**: Select your preferred region (e.g., `us-central1`)
-   - **Default table expiration**: Optional (leave empty for no expiration)
-   - **Encryption**: Use Google-managed encryption key (default)
-6. Click **"Create Dataset"**
-
-![BigQuery Dataset Creation](docs/images/bigquery_dataset_creation.png)
-
-> *Screenshot showing the "Create Dataset" form with dataset ID and location configured*
-
-
-> **Note**: The table will be automatically created by the application on first use. No manual table creation is required.
+If you want to use the **Pub/Sub strategy** instead of Direct streaming, follow the setup instructions below. The Pub/Sub strategy allows for asynchronous event processing and better scalability.
 
 ---
 
@@ -366,6 +320,63 @@ For automatic loading from Pub/Sub to BigQuery:
 
 > **Screenshot Placeholder 4**: Pub/Sub subscription creation form with BigQuery write configuration
 > *Description: Screenshot showing subscription creation form with "Write to BigQuery" delivery type, schema configuration, and write metadata settings*
+
+---
+
+> **Note**: This project is designed to run on **Google Cloud Run**. For production deployment, see the [Production Deployment](#production-deployment-google-cloud-run) section.
+
+---
+
+## Configuration
+
+### Environment Variables
+
+The project includes a `.env.template` file with all configuration options. To configure the application:
+
+1. **Copy the template file**:
+```bash
+cp .env.template src/.env
+```
+
+2. **Edit `src/.env`** and update the values according to your environment.
+
+
+### Key Configuration Parameters
+
+#### Required Settings
+
+- `APP_CONFIG__ENVIRONMENT`: Application environment (`QA` for local development, `PROD` for production)
+- `APP_CONFIG__WRITERS__PROJECT_ID`: Your Google Cloud Project ID
+- `APP_CONFIG__WRITERS__STRATEGY`: Streaming strategy (`direct` for BigQuery Storage Write API, or `pubsub` for Pub/Sub)
+- `APP_CONFIG__WRITERS__BQ__DATASET_ID`: BigQuery dataset name
+- `APP_CONFIG__WRITERS__BQ__TABLE_ID`: BigQuery table name
+- `APP_CONFIG__CORS__ALLOWED_ORIGINS`: List of allowed origins for CORS (JSON array format)
+
+---
+
+## Google Cloud BigQuery Setup (Direct Strategy)
+
+> **Note**: This section is for reference. For local development setup, see the [Cloud BigQuery Setup (Direct Strategy)](#cloud-bigquery-setup-direct-strategy) section under Local Development Setup.
+
+If you're using the **Direct streaming strategy** (`APP_CONFIG__WRITERS__STRATEGY=direct`), you need to set up Google Cloud BigQuery infrastructure.
+
+### Step 1: Create a BigQuery Dataset
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
+2. Click on your project name in the left sidebar
+3. Click **"Create Dataset"**
+4. Enter the dataset ID (must match `APP_CONFIG__WRITERS__BQ__DATASET_ID`)
+5. Configure dataset settings:
+   - **Data location**: Select your preferred region (e.g., `us-central1`)
+   - **Default table expiration**: Optional (leave empty for no expiration)
+   - **Encryption**: Use Google-managed encryption key (default)
+6. Click **"Create Dataset"**
+
+![BigQuery Dataset Creation](docs/images/bigquery_dataset_creation.png)
+
+> *Screenshot showing the "Create Dataset" form with dataset ID and location configured*
+
+> **Note**: The table will be automatically created by the application on first use. No manual table creation is required.
 
 ---
 
