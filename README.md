@@ -375,6 +375,99 @@ You should see your test event data in the table:
 
 ---
 
+## Deployment to Cloud Run
+
+This section covers the steps required to deploy the application to Google Cloud Run and set up the necessary infrastructure for production use.
+
+### Google Cloud Load Balancer Setup
+
+> **⚠️ Required for IP and Geolocation Collection**: If you want to collect client IP addresses and geolocation data, you **must** set up a Google Cloud Load Balancer. The Load Balancer adds specific headers (`X-Forwarded-For`, `X-Client-Geo-*`) that contain the client's IP address and geographic information, which Cloud Run cannot provide directly.
+
+#### Step 1: Reserve a Static IP Address
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → VPC network → IP addresses
+2. Click **"Reserve External Static IP Address"** (or **"Reserve Internal Static IP Address"** if using internal load balancer)
+3. Configure the IP address:
+   - **Name**: Enter a name for the IP address (e.g., `real-streaming-lb-ip`)
+   - **IP version**: IPv4
+   - **Type**: 
+     - **Global** - for HTTP(S) Load Balancer (recommended)
+     - **Regional** - for Network Load Balancer
+   - **Network tier**: Premium (recommended for better performance)
+4. Click **"Reserve"**
+5. **Note the IP address** - you'll need it for DNS configuration later
+
+![Reserve Static IP Address](docs/images/reserv_ip.png)
+
+> *Screenshot showing the IP address reservation form with configuration options*
+
+#### Step 2: Create HTTP(S) Load Balancer
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → Network Services → Load Balancing
+2. Click **"Create Load Balancer"**
+3. Under **"HTTP(S) Load Balancing"**, click **"Start Configuration"**
+4. Select **"Internet facing"** (or **"Internal"** if using internal load balancer)
+5. Select **"Global"** (recommended) or **"Regional"** based on your needs
+6. Click **"Continue"**
+
+#### Step 3: Configure Backend Service
+
+1. Click **"Backend Configuration"**
+2. Click **"Create or select backend services & backend buckets"**
+3. Click **"Backend services"** → **"Create Backend Service"**
+4. Configure backend service:
+   - **Name**: Enter a name (e.g., `real-streaming-backend`)
+   - **Backend type**: Select **"Serverless NEG"** (Network Endpoint Group)
+   - **Serverless NEG**: Click **"Create Serverless NEG"**
+     - **Name**: Enter a name (e.g., `real-streaming-neg`)
+     - **Region**: Select the region where your Cloud Run service is deployed
+     - **Cloud Run service**: Select your Cloud Run service name
+     - Click **"Create"**
+   - **Protocol**: HTTP
+   - **Port**: 80 (or 443 for HTTPS)
+   - **Timeout**: 30 seconds (default)
+5. Click **"Create"** to create the backend service
+6. Click **"Done"** to return to load balancer configuration
+
+#### Step 4: Configure Frontend
+
+1. Click **"Frontend Configuration"**
+2. Configure frontend:
+   - **Protocol**: HTTPS (recommended) or HTTP
+   - **IP address**: Select the static IP address reserved in Step 1
+   - **Port**: 443 (for HTTPS) or 80 (for HTTP)
+   - **Certificate**: 
+     - For HTTPS: Create or select an SSL certificate
+     - For HTTP: No certificate needed
+3. Click **"Done"**
+
+#### Step 5: Review and Create
+
+1. Review all configurations
+2. Enter a **name** for the load balancer (e.g., `real-streaming-lb`)
+3. Click **"Create"**
+
+> **Note**: It may take a few minutes for the load balancer to be provisioned and become active.
+
+#### Step 6: Configure DNS (Optional but Recommended)
+
+1. Go to your DNS provider (e.g., Google Cloud DNS, Cloudflare, etc.)
+2. Create an **A record** pointing your domain to the static IP address reserved in Step 1
+3. For HTTPS, ensure your SSL certificate covers your domain name
+
+### Important Headers
+
+Once the Load Balancer is configured, it will automatically add the following headers to requests:
+
+- `X-Forwarded-For`: Client's original IP address
+- `X-Client-Geo-Country`: Client's country code (if available)
+- `X-Client-Geo-Region`: Client's region/state (if available)
+- `X-Client-Geo-City`: Client's city (if available)
+
+These headers are automatically parsed by the application to enrich event data with geolocation information.
+
+---
+
 > **Note**: This project is designed to run on **Google Cloud Run**. For production deployment, see the [Production Deployment](#production-deployment-google-cloud-run) section.
 
 ---
@@ -429,97 +522,6 @@ If you're using the **Direct streaming strategy** (`APP_CONFIG__WRITERS__STRATEG
 > *Screenshot showing the "Create Dataset" form with dataset ID and location configured*
 
 > **Note**: The table will be automatically created by the application on first use. No manual table creation is required.
-
----
-
-## Google Cloud Load Balancer Setup
-
-> **⚠️ Required for IP and Geolocation Collection**: If you want to collect client IP addresses and geolocation data, you **must** set up a Google Cloud Load Balancer. The Load Balancer adds specific headers (`X-Forwarded-For`, `X-Client-Geo-*`) that contain the client's IP address and geographic information, which Cloud Run cannot provide directly.
-
-### Step 1: Reserve a Static IP Address
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com) → VPC network → IP addresses
-2. Click **"Reserve External Static IP Address"** (or **"Reserve Internal Static IP Address"** if using internal load balancer)
-3. Configure the IP address:
-   - **Name**: Enter a name for the IP address (e.g., `real-streaming-lb-ip`)
-   - **IP version**: IPv4
-   - **Type**: 
-     - **Global** - for HTTP(S) Load Balancer (recommended)
-     - **Regional** - for Network Load Balancer
-   - **Network tier**: Premium (recommended for better performance)
-4. Click **"Reserve"**
-5. **Note the IP address** - you'll need it for DNS configuration later
-
-> **Screenshot Placeholder**: Static IP address reservation form
-> *Description: Screenshot showing the IP address reservation form with global type and premium network tier selected*
-
-### Step 2: Create HTTP(S) Load Balancer
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com) → Network Services → Load Balancing
-2. Click **"Create Load Balancer"**
-3. Under **"HTTP(S) Load Balancing"**, click **"Start Configuration"**
-4. Select **"Internet facing"** (or **"Internal"** if using internal load balancer)
-5. Select **"Global"** (recommended) or **"Regional"** based on your needs
-6. Click **"Continue"**
-
-### Step 3: Configure Backend Service
-
-1. Click **"Backend Configuration"**
-2. Click **"Create or select backend services & backend buckets"**
-3. Click **"Backend services"** → **"Create Backend Service"**
-4. Configure backend service:
-   - **Name**: Enter a name (e.g., `real-streaming-backend`)
-   - **Backend type**: Select **"Serverless NEG"** (Network Endpoint Group)
-   - **Serverless NEG**: Click **"Create Serverless NEG"**
-     - **Name**: Enter a name (e.g., `real-streaming-neg`)
-     - **Region**: Select the region where your Cloud Run service is deployed
-     - **Cloud Run service**: Select your Cloud Run service name
-     - Click **"Create"**
-   - **Protocol**: HTTP
-   - **Port**: 80 (or 443 for HTTPS)
-   - **Timeout**: 30 seconds (default)
-5. Click **"Create"** to create the backend service
-6. Click **"Done"** to return to load balancer configuration
-
-### Step 4: Configure Frontend
-
-1. Click **"Frontend Configuration"**
-2. Configure frontend:
-   - **Protocol**: HTTPS (recommended) or HTTP
-   - **IP address**: Select the static IP address reserved in Step 1
-   - **Port**: 443 (for HTTPS) or 80 (for HTTP)
-   - **Certificate**: 
-     - For HTTPS: Create or select an SSL certificate
-     - For HTTP: No certificate needed
-3. Click **"Done"**
-
-### Step 5: Review and Create
-
-1. Review all configurations
-2. Enter a **name** for the load balancer (e.g., `real-streaming-lb`)
-3. Click **"Create"**
-
-> **Note**: It may take a few minutes for the load balancer to be provisioned and become active.
-
-### Step 6: Configure DNS (Optional but Recommended)
-
-1. Go to your DNS provider (e.g., Google Cloud DNS, Cloudflare, etc.)
-2. Create an **A record** pointing your domain to the static IP address reserved in Step 1
-3. For HTTPS, ensure your SSL certificate covers your domain name
-
-### Important Headers
-
-Once the Load Balancer is configured, it will automatically add the following headers to requests:
-
-- `X-Forwarded-For`: Client's original IP address
-- `X-Client-Geo-Country`: Client's country code (if available)
-- `X-Client-Geo-Region`: Client's region/state (if available)
-- `X-Client-Geo-City`: Client's city (if available)
-
-These headers are automatically parsed by the application to enrich event data with geolocation information.
-
-> **Screenshot Placeholder**: Load Balancer configuration showing backend service and frontend configuration
-> *Description: Screenshot showing the Load Balancer configuration with Serverless NEG backend service and HTTPS frontend with static IP*
 
 ---
 
