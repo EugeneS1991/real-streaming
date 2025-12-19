@@ -138,10 +138,14 @@ For production deployment, you need to enable and configure the following Google
 
 - Python 3.10+ (tested with Python 3.14)
 - Google Cloud Project with BigQuery API enabled
+- Google Cloud CLI installed and configured
 - Google Cloud Service Account with appropriate permissions (see [Permissions](#permissions))
-- (Optional) Google Cloud Pub/Sub topic and subscription (if using Pub/Sub strategy)
 
 ### Local Development Setup
+
+Follow these steps to set up and run the application locally:
+
+#### Step 1: Clone Repository and Install Dependencies
 
 1. **Clone the repository**:
 ```bash
@@ -164,25 +168,115 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-4. **Set up Google Cloud Application Default Credentials**:
-   
-   The application uses [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) for authentication with Google Cloud services.
-   
-   For local development, authenticate using gcloud CLI:
+#### Step 2: Configure Environment Variables
+
+1. **Copy the template file**:
+```bash
+cp .env.template src/.env
+```
+
+2. **Edit `src/.env`** and set the following required variables:
+
+```bash
+# Required: Google Cloud Project ID
+APP_CONFIG__WRITERS__PROJECT_ID=your_project_id
+
+# Required: BigQuery Dataset ID
+APP_CONFIG__WRITERS__BQ__DATASET_ID=your_dataset_id
+
+# Required: BigQuery Table ID
+APP_CONFIG__WRITERS__BQ__TABLE_ID=your_table_id
+
+# Required: Streaming strategy (use "direct" for local development)
+APP_CONFIG__WRITERS__STRATEGY=direct
+
+# Required: CORS allowed origins (for local development)
+APP_CONFIG__CORS__ALLOWED_ORIGINS=["https://127.0.0.1:8080","http://127.0.0.1:8080","http://localhost:8080"]
+```
+
+> **Note**: Replace `your_project_id`, `your_dataset_id`, and `your_table_id` with your actual Google Cloud project, dataset, and table names.
+
+#### Step 3: Set Up Google Cloud Application Default Credentials
+
+The application uses [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) for authentication with Google Cloud services.
+
+For local development, authenticate using gcloud CLI:
 ```bash
 gcloud auth application-default login
 ```
-   
-   This will automatically configure credentials that will be used by the application. No need to set `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
 
-5. **Configure environment variables** (see [Configuration](#configuration) section)
+This will automatically configure credentials that will be used by the application. No need to set `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
 
-6. **Run the application**:
+#### Step 4: Create BigQuery Dataset
+
+Before running the application, you need to create a BigQuery dataset:
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
+2. Click on your project name in the left sidebar
+3. Click **"Create Dataset"**
+4. Enter the dataset ID (must match `APP_CONFIG__WRITERS__BQ__DATASET_ID` from Step 2)
+5. Configure dataset settings:
+   - **Data location**: Select your preferred region (e.g., `us-central1`)
+   - **Default table expiration**: Optional (leave empty for no expiration)
+   - **Encryption**: Use Google-managed encryption key (default)
+6. Click **"Create Dataset"**
+
+![BigQuery Dataset Creation](docs/images/bigquery_dataset_creation.png)
+
+> **Note**: The table will be automatically created by the application on first use. No manual table creation is required.
+
+#### Step 5: Run the Application Locally
+
+Start the application:
 ```bash
-uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
+uvicorn src.main:main_app --host 0.0.0.0 --port 8080 --reload
 ```
 
-The API will be available at `http://localhost:8000`
+The API will be available at:
+- API Documentation: `http://localhost:8080/docs`
+- Alternative docs: `http://localhost:8080/redoc`
+- Streaming endpoint: `http://localhost:8080/api/v1/streaming/{stream_id}`
+
+After starting the application, check the console output. You should see a message indicating that the table was created:
+
+![Table Created in Console](docs/images/table_created.png)
+
+**Verify table creation in BigQuery:**
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
+2. Navigate to your dataset (created in Step 4)
+3. Verify that the table (specified in `APP_CONFIG__WRITERS__BQ__TABLE_ID`) was automatically created
+4. Click on the table name to view its details
+
+#### Step 6: Send a Test Request via API Documentation
+
+1. Open `http://localhost:8080/docs` in your browser
+2. Find the `POST /api/v1/streaming/{stream_id}` endpoint
+3. Click **"Try it out"**
+4. Set `stream_id` to `1` (or any number)
+5. Fill in the request body using the schema shown in Swagger UI (the request body structure is displayed in the documentation)
+6. Click **"Execute"**
+
+![Test Request in Swagger UI](docs/images/test_request.png.png)
+
+#### Step 7: Verify Data in BigQuery
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
+2. Navigate to your dataset and table
+3. Click on the table name
+4. Click **"Preview"** tab to view the data
+5. Or run a SQL query:
+```sql
+SELECT * FROM `your_project_id.your_dataset_id.your_table_id`
+ORDER BY event_timestamp DESC
+LIMIT 10;
+```
+
+You should see your test event data in the table:
+
+![Data in BigQuery Table](docs/images/data_in_bq.png)
+
+---
 
 > **Note**: This project is designed to run on **Google Cloud Run**. For production deployment, see the [Production Deployment](#production-deployment-google-cloud-run) section.
 
