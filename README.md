@@ -379,11 +379,17 @@ You should see your test event data in the table:
 
 This section covers the steps required to deploy the application to Google Cloud Run and set up the necessary infrastructure for production use.
 
-### Google Cloud Load Balancer Setup
+> **⚠️ Important**: The following configuration uses **minimal settings** suitable for initial deployment and testing. For production workloads with higher traffic, you should adjust the following parameters:
+> - Autoscaling limits (min/max instances)
+> - CPU and memory allocation
+> - Request timeout settings
+> - Concurrency settings
+> 
+> Review and adjust these settings based on your expected load after initial deployment.
 
-> **⚠️ Required for IP and Geolocation Collection**: If you want to collect client IP addresses and geolocation data, you **must** set up a Google Cloud Load Balancer. The Load Balancer adds specific headers (`X-Forwarded-For`, `X-Client-Geo-*`) that contain the client's IP address and geographic information, which Cloud Run cannot provide directly.
+### Step 1: Reserve a Static IP Address
 
-#### Step 1: Reserve a Static IP Address
+> **Note**: This IP address will be used for the Load Balancer (configured later). Reserve it now so it's ready when you set up the Load Balancer.
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com) → VPC network → IP addresses
 2. Click **"Reserve External Static IP Address"** (or **"Reserve Internal Static IP Address"** if using internal load balancer)
@@ -401,16 +407,92 @@ This section covers the steps required to deploy the application to Google Cloud
 
 > *Screenshot showing the IP address reservation form with configuration options*
 
-#### Step 2: Create HTTP(S) Load Balancer
+### Step 2: Connect GitHub to Cloud Build
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → Cloud Run → Services
+2. Click **"Create Service"**
+3. Under **"Deployment"**, select **"Continuously deploy from a repository (source or function)"**
+4. Select **"GitHub"** as the source
+5. Under **"Build"**, select **"Cloud Build"**
+6. Click **"Set up with Cloud Build"**
+7. Configure the build:
+   - **Source repository**: Connect your GitHub repository (if not already connected)
+   - **Branch**: Set to `^main$` (or your main branch name)
+   - **Build type**: Select **"Dockerfile"**
+   - **Source location**: `/Dockerfile`
+8. Click **"Save"**
+
+![Connect GitHub to Cloud Build](docs/images/git_to_cloud_build.png)
+
+> *Screenshot showing Cloud Build configuration with GitHub repository connection and Dockerfile build settings*
+
+### Step 3: Configure Cloud Run Service
+
+After connecting GitHub, configure your Cloud Run service settings:
+
+#### Basic Configuration
+
+1. **Service name**: Enter a name (e.g., `real-streaming`)
+2. **Region**: Select your preferred region (e.g., `europe-west1`, `us-central1`)
+3. **Allow unauthenticated invocations**: Enable **"Public access"** (check this option)
+
+#### Container Settings
+
+1. Click **"Container"** tab or section
+2. Configure the following:
+
+   **CPU allocation and pricing:**
+   - **CPU**: Select based on your needs (start with minimum)
+   - **Memory**: Select based on your needs (start with minimum)
+   - **Billing**: Select **"Request-based"** (pay per request)
+
+   **Autoscaling:**
+   - **Min instances**: `0` (allows scaling to zero when no traffic)
+   - **Max instances**: `2` (adjust based on expected load)
+
+   **Ingress:**
+   - **Allow traffic from external Application Load Balancers**: **Enable** (check this option)
+   - This allows the Load Balancer (configured later) to route traffic to your Cloud Run service
+
+#### Environment Variables
+
+1. Click **"Variables & Secrets"** tab
+2. Click **"Add Variable"** for each of the following:
+
+```bash
+APP_CONFIG__WRITERS__PROJECT_ID=your_project_id
+APP_CONFIG__WRITERS__BQ__DATASET_ID=your_dataset_id
+APP_CONFIG__WRITERS__BQ__TABLE_ID=your_table_id
+APP_CONFIG__WRITERS__PUBSUB__TOPIC_ID=your_topic_id
+APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID=your_subscription_id
+APP_CONFIG__ENVIRONMENT=PROD
+APP_CONFIG__CORS__ALLOWED_ORIGINS=["https://yourdomain.com"]
+```
+
+> **Note**: 
+> - Replace all placeholder values (`your_project_id`, `your_dataset_id`, etc.) with your actual values
+> - For `APP_CONFIG__CORS__ALLOWED_ORIGINS`, use the domain that will be connected to the Load Balancer
+> - You can leave `APP_CONFIG__CORS__ALLOWED_ORIGINS` empty initially and set it after deploying and configuring the Load Balancer with your domain
+> - Use the same values you configured in your local `.env` file
+
+3. Click **"Create"** or **"Deploy"** to start the deployment
+
+> **Note**: The first deployment may take several minutes as Cloud Build builds the Docker image and deploys it to Cloud Run.
+
+### Google Cloud Load Balancer Setup
+
+> **⚠️ Required for IP and Geolocation Collection**: If you want to collect client IP addresses and geolocation data, you **must** set up a Google Cloud Load Balancer. The Load Balancer adds specific headers (`X-Forwarded-For`, `X-Client-Geo-*`) that contain the client's IP address and geographic information, which Cloud Run cannot provide directly.
+
+#### Step 1: Create HTTP(S) Load Balancer
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com) → Network Services → Load Balancing
 2. Click **"Create Load Balancer"**
 3. Under **"HTTP(S) Load Balancing"**, click **"Start Configuration"**
 4. Select **"Internet facing"** (or **"Internal"** if using internal load balancer)
 5. Select **"Global"** (recommended) or **"Regional"** based on your needs
-6. Click **"Continue"**
+6. Click **"Configure"**
 
-#### Step 3: Configure Backend Service
+#### Step 2: Configure Backend Service
 
 1. Click **"Backend Configuration"**
 2. Click **"Create or select backend services & backend buckets"**
@@ -429,7 +511,7 @@ This section covers the steps required to deploy the application to Google Cloud
 5. Click **"Create"** to create the backend service
 6. Click **"Done"** to return to load balancer configuration
 
-#### Step 4: Configure Frontend
+#### Step 3: Configure Frontend
 
 1. Click **"Frontend Configuration"**
 2. Configure frontend:
@@ -441,7 +523,7 @@ This section covers the steps required to deploy the application to Google Cloud
      - For HTTP: No certificate needed
 3. Click **"Done"**
 
-#### Step 5: Review and Create
+#### Step 4: Review and Create
 
 1. Review all configurations
 2. Enter a **name** for the load balancer (e.g., `real-streaming-lb`)
@@ -449,7 +531,7 @@ This section covers the steps required to deploy the application to Google Cloud
 
 > **Note**: It may take a few minutes for the load balancer to be provisioned and become active.
 
-#### Step 6: Configure DNS (Optional but Recommended)
+#### Step 5: Configure DNS (Optional but Recommended)
 
 1. Go to your DNS provider (e.g., Google Cloud DNS, Cloudflare, etc.)
 2. Create an **A record** pointing your domain to the static IP address reserved in Step 1
