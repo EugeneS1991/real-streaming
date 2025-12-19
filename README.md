@@ -231,8 +231,9 @@ If you're using the **Direct streaming strategy** (`APP_CONFIG__WRITERS__STRATEG
    - **Encryption**: Use Google-managed encryption key (default)
 6. Click **"Create Dataset"**
 
-> [BigQuery Dataset Creating](docs/images/architecture-diagram.png)
-> *Description: Screenshot showing the "Create Dataset" form with dataset ID and location configured*
+![BigQuery Dataset Creation](docs/images/bigquery_dataset_creation.png)
+
+> *Screenshot showing the "Create Dataset" form with dataset ID and location configured*
 
 
 The application will automatically create the table with the correct schema, partitioning, and clustering when it first runs.
