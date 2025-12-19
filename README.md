@@ -257,7 +257,7 @@ After starting the application, check the console output. You should see a messa
 5. Fill in the request body using the schema shown in Swagger UI (the request body structure is displayed in the documentation)
 6. Click **"Execute"**
 
-![Test Request in Swagger UI](docs/images/test_request.png.png)
+![Test Request in Swagger UI](docs/images/test_request.png)
 
 #### Step 7: Verify Data in BigQuery
 
