@@ -90,35 +90,47 @@ For production deployment, you need to enable and configure the following Google
 ### High-Level Flow
 
 ```
-Web Browser → FastAPI Endpoint → Request Enrichment → Streaming Service → BigQuery/PubSub
-                ↓
-            Cookie Management
-            Device Parsing
-            Geo Detection
-            Traffic Source Analysis
+                 ┌───────────────────┐
+                 │     Web Browser   │
+                 └────────┬──────────┘
+                          │
+                          ▼
+                 ┌───────────────────┐
+                 │   Load Balancer   │
+                 │  (adds headers)   │
+                 └────────┬──────────┘
+                          │
+                          ▼
+                 ┌───────────────────┐
+                 │  FastAPI Endpoint │
+                 └────────┬──────────┘
+                          │
+          ┌───────────────┼────────────────┐
+          │               │                │
+          ▼               ▼                ▼
+ ┌────────────────┐ ┌────────────────┐ ┌────────────────┐
+ │   Cookie Mgmt  │ │ Device Parsing │ │  Geo Detection │
+ └────────────────┘ └────────────────┘ └────────────────┘
+                          │
+                          ▼
+                 ┌───────────────────┐
+                 │ Request Enrichment│
+                 └────────┬──────────┘
+                          │
+          ┌───────────────┴───────────────┐
+          │                               │
+          ▼                               ▼
+ ┌───────────────────┐           ┌───────────────────┐
+ │     (Pub/Sub)     │           │ Direct to BigQuery│    
+ └────────┬──────────┘           └────────┬──────────┘
+          │                               │
+          └───────────────┬───────────────┘
+                          ▼
+                 ┌───────────────────┐
+                 │     BigQuery      │
+                 └───────────────────┘
+
 ```
-
-### Components
-
-1. **API Layer** (`src/api/api_v1/streaming/`):
-   - `router.py`: Main endpoint handler
-   - `schemas.py`: Pydantic models for request/response validation
-   - `dependencies/`: Request enrichment logic
-   - `cookies.py`: Cookie management
-
-2. **Storage Layer** (`src/storage/bigquery/`):
-   - `client.py`: Streaming service factory
-   - `writers/direct.py`: BigQuery Storage Write API implementation
-   - `writers/pubsub.py`: Google Pub/Sub publisher
-   - `table.py`: Table creation and management
-   - `schema.py`: BigQuery table schema definition
-
-3. **Core Layer** (`src/core/`):
-   - `config.py`: Application configuration (Pydantic Settings)
-   - `constants.py`: Application constants
-   - `utils.py`: Utility functions
-
----
 
 ## Installation
 
