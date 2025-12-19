@@ -387,27 +387,7 @@ This section covers the steps required to deploy the application to Google Cloud
 > 
 > Review and adjust these settings based on your expected load after initial deployment.
 
-### Step 1: Reserve a Static IP Address
-
-> **Note**: This IP address will be used for the Load Balancer (configured later). Reserve it now so it's ready when you set up the Load Balancer.
-
-1. Go to [Google Cloud Console](https://console.cloud.google.com) → VPC network → IP addresses
-2. Click **"Reserve External Static IP Address"** (or **"Reserve Internal Static IP Address"** if using internal load balancer)
-3. Configure the IP address:
-   - **Name**: Enter a name for the IP address (e.g., `real-streaming-lb-ip`)
-   - **IP version**: IPv4
-   - **Type**: 
-     - **Global** - for HTTP(S) Load Balancer (recommended)
-     - **Regional** - for Network Load Balancer
-   - **Network tier**: Premium (recommended for better performance)
-4. Click **"Reserve"**
-5. **Note the IP address** - you'll need it for DNS configuration later
-
-![Reserve Static IP Address](docs/images/reserv_ip.png)
-
-> *Screenshot showing the IP address reservation form with configuration options*
-
-### Step 2: Connect GitHub to Cloud Build
+### Step 1: Connect GitHub to Cloud Build
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com) → Cloud Run → Services
 2. Click **"Create Service"**
@@ -426,7 +406,7 @@ This section covers the steps required to deploy the application to Google Cloud
 
 > *Screenshot showing Cloud Build configuration with GitHub repository connection and Dockerfile build settings*
 
-### Step 3: Configure Cloud Run Service
+### Step 2: Configure Cloud Run Service
 
 After connecting GitHub, configure your Cloud Run service settings:
 
@@ -478,6 +458,26 @@ APP_CONFIG__CORS__ALLOWED_ORIGINS=["https://yourdomain.com"]
 3. Click **"Create"** or **"Deploy"** to start the deployment
 
 > **Note**: The first deployment may take several minutes as Cloud Build builds the Docker image and deploys it to Cloud Run.
+
+### Step 3: Reserve a Static IP Address
+
+> **Note**: This IP address will be used for the Load Balancer (configured in the next section). Reserve it now so it's ready when you set up the Load Balancer.
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → VPC network → IP addresses
+2. Click **"Reserve External Static IP Address"** (or **"Reserve Internal Static IP Address"** if using internal load balancer)
+3. Configure the IP address:
+   - **Name**: Enter a name for the IP address (e.g., `real-streaming-lb-ip`)
+   - **IP version**: IPv4
+   - **Type**: 
+     - **Global** - for HTTP(S) Load Balancer (recommended)
+     - **Regional** - for Network Load Balancer
+   - **Network tier**: Premium (recommended for better performance)
+4. Click **"Reserve"**
+5. **Note the IP address** - you'll need it for DNS configuration later
+
+![Reserve Static IP Address](docs/images/reserv_ip.png)
+
+> *Screenshot showing the IP address reservation form with configuration options*
 
 ### Google Cloud Load Balancer Setup
 
