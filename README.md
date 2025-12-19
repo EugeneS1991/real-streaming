@@ -374,7 +374,7 @@ Your account needs the following permissions:
 
 ## Running the Application
 
-### Local Development {#local-development}
+### Local Development
 
 #### Prerequisites
 
@@ -418,7 +418,7 @@ The API will be available at:
 > **Screenshot Placeholder 7**: FastAPI Swagger UI showing the streaming endpoint
 > *Description: Screenshot of the FastAPI automatic documentation at /docs showing the POST /api/v1/streaming/{stream_id} endpoint with request/response schemas*
 
-### Production Deployment (Google Cloud Run) {#production-deployment-google-cloud-run}
+### Production Deployment (Google Cloud Run)
 
 This project is designed to run on **Google Cloud Run**. The project includes a `cloudbuild.yaml` configuration file for automated deployment using Google Cloud Build.
 
