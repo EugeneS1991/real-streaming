@@ -35,6 +35,56 @@ This service provides:
 
 ---
 
+## Quick Start
+
+Choose your deployment option:
+
+- 🚀 **[Run Locally](#local-development)** - Quick setup for local development and testing
+- ☁️ **[Deploy to Cloud Run](#production-deployment-google-cloud-run)** - Production deployment on Google Cloud Run
+
+> **Recommended**: Start with local development to test the application, then proceed to cloud deployment.
+
+---
+
+## Required Google Cloud Services
+
+For production deployment, you need to enable and configure the following Google Cloud services:
+
+### Required Services
+
+- **VPC Network** - For reserving static IP addresses
+  - Used for: Load Balancer frontend IP address
+  - Service: [VPC Network](https://console.cloud.google.com/networking/vpc)
+
+- **Cloud Load Balancer** - For routing traffic and collecting client IP/geolocation
+  - Used for: HTTP(S) load balancing, adding client IP headers (`X-Forwarded-For`, `X-Client-Geo-*`)
+  - Service: [Load Balancing](https://console.cloud.google.com/net-services/loadbalancing)
+  - **Note**: Required if you want to collect IP addresses and geolocation data
+
+- **Cloud Artifact Registry** - For storing Docker container images
+  - Used for: Storing Docker images built by Cloud Build
+  - Service: [Artifact Registry](https://console.cloud.google.com/artifacts)
+
+- **Cloud Build** - For building and deploying the application
+  - Used for: Building Docker images, pushing to Artifact Registry, deploying to Cloud Run
+  - Service: [Cloud Build](https://console.cloud.google.com/cloud-build)
+
+- **Cloud Run** - For running the application
+  - Used for: Hosting the FastAPI application
+  - Service: [Cloud Run](https://console.cloud.google.com/run)
+
+- **BigQuery** - For storing analytics events
+  - Used for: Storing streamed events data
+  - Service: [BigQuery](https://console.cloud.google.com/bigquery)
+
+### Optional Services
+
+- **Cloud Pub/Sub** - For asynchronous event processing (if using Pub/Sub strategy)
+  - Used for: Publishing events to Pub/Sub topics, then writing to BigQuery via subscription
+  - Service: [Pub/Sub](https://console.cloud.google.com/cloudpubsub)
+  - **Note**: Only required if `APP_CONFIG__WRITERS__STRATEGY=pubsub`
+
+
 ## Architecture
 
 ### High-Level Flow
@@ -84,7 +134,7 @@ Web Browser → FastAPI Endpoint → Request Enrichment → Streaming Service �
 1. **Clone the repository**:
 ```bash
 git clone <repository-url>
-cd epmgoogrsd-stream-events
+cd real-streaming
 ```
 
 2. **Create a virtual environment**:
@@ -102,17 +152,16 @@ pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
-4. **Set up Google Cloud credentials**:
-   - Create a service account in Google Cloud Console
-   - Download the JSON key file
-   - Set the environment variable:
+4. **Set up Google Cloud Application Default Credentials**:
+   
+   The application uses [Application Default Credentials (ADC)](https://cloud.google.com/docs/authentication/application-default-credentials) for authentication with Google Cloud services.
+   
+   For local development, authenticate using gcloud CLI:
 ```bash
-# On Windows (PowerShell)
-$env:GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account-key.json"
-
-# On Linux/Mac
-export GOOGLE_APPLICATION_CREDENTIALS="path/to/service-account-key.json"
+gcloud auth application-default login
 ```
+   
+   This will automatically configure credentials that will be used by the application. No need to set `GOOGLE_APPLICATION_CREDENTIALS` environment variable.
 
 5. **Configure environment variables** (see [Configuration](#configuration) section)
 
@@ -123,24 +172,7 @@ uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
 
 The API will be available at `http://localhost:8000`
 
-### Docker Setup
-
-1. **Build the Docker image**:
-```bash
-docker build -t epmgoogrsd-stream-events .
-```
-
-2. **Run the container**:
-```bash
-docker run -p 8080:8080 \
-  -e GOOGLE_APPLICATION_CREDENTIALS=/path/to/key.json \
-  -v /path/to/key.json:/path/to/key.json:ro \
-  -v $(pwd)/src/.env:/app/src/.env:ro \
-  epmgoogrsd-stream-events
-```
-
-> **Screenshot Placeholder 1**: Docker build output showing successful image creation
-> *Description: Screenshot showing the output of `docker build` command with "Successfully built" message*
+> **Note**: This project is designed to run on **Google Cloud Run**. For production deployment, see the [Production Deployment](#production-deployment-google-cloud-run) section.
 
 ---
 
@@ -148,131 +180,52 @@ docker run -p 8080:8080 \
 
 ### Environment Variables
 
-Create a `.env` file in the `src/` directory. The application uses nested configuration with the prefix `APP_CONFIG__`.
+The project includes a `.env.template` file with all configuration options. To configure the application:
 
-#### Basic Configuration
-
+1. **Copy the template file**:
 ```bash
-# Application Environment (QA for local development, PROD for production)
-APP_CONFIG__ENVIRONMENT=QA
-
-# Server Configuration
-APP_CONFIG__RUN__HOST=0.0.0.0
-APP_CONFIG__RUN__PORT=8000
-
-# API Prefixes
-APP_CONFIG__API__PREFIX=/api
-APP_CONFIG__API__V1__PREFIX=/v1
-APP_CONFIG__API__V1__STREAMING=/streaming
-APP_CONFIG__API__V1__FETCH=/fetch
+cp .env.template src/.env
 ```
 
-#### BigQuery Configuration
+2. **Edit `src/.env`** and update the values according to your environment.
 
-```bash
-# Google Cloud Project ID
-APP_CONFIG__WRITERS__PROJECT_ID=your-gcp-project-id
 
-# Streaming Strategy: "direct" or "pubsub"
-APP_CONFIG__WRITERS__STRATEGY=direct
+### Key Configuration Parameters
 
-# BigQuery Table Configuration
-APP_CONFIG__WRITERS__BQ__DATASET_ID=analytics
-APP_CONFIG__WRITERS__BQ__TABLE_ID=events_stream
-APP_CONFIG__WRITERS__BQ__FLUSH_INTERVAL=0.5
-APP_CONFIG__WRITERS__BQ__MAX_BATCH_SIZE=500
-APP_CONFIG__WRITERS__BQ__MAX_QUEUE_SIZE=100000
-```
+#### Required Settings
 
-**Configuration Parameters Explained**:
-- `FLUSH_INTERVAL`: Time in seconds to wait before flushing a batch (even if not full)
-- `MAX_BATCH_SIZE`: Maximum number of rows to include in a single batch
-- `MAX_QUEUE_SIZE`: Maximum number of rows that can be queued before backpressure
+- `APP_CONFIG__ENVIRONMENT`: Application environment (`QA` for local development, `PROD` for production)
+- `APP_CONFIG__WRITERS__PROJECT_ID`: Your Google Cloud Project ID
+- `APP_CONFIG__WRITERS__STRATEGY`: Streaming strategy (`direct` for BigQuery Storage Write API, or `pubsub` for Pub/Sub)
+- `APP_CONFIG__WRITERS__BQ__DATASET_ID`: BigQuery dataset name
+- `APP_CONFIG__WRITERS__BQ__TABLE_ID`: BigQuery table name
+- `APP_CONFIG__CORS__ALLOWED_ORIGINS`: List of allowed origins for CORS (JSON array format)
 
-#### Pub/Sub Configuration (if using Pub/Sub strategy)
+---
 
-```bash
-# Pub/Sub Topic and Subscription
-APP_CONFIG__WRITERS__PUBSUB__TOPIC_ID=streaming-events
-APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID=streaming-events-sub
-APP_CONFIG__WRITERS__PUBSUB__MAX_BYTES=1048576
-APP_CONFIG__WRITERS__PUBSUB__PUBLISH_TIMEOUT=10.0
-APP_CONFIG__WRITERS__PUBSUB__MAX_BATCH_SIZE=500
-APP_CONFIG__WRITERS__PUBSUB__FLUSH_INTERVAL=0.5
-```
+## Google Cloud BigQuery Setup (Direct Strategy)
 
-#### CORS Configuration
+If you're using the **Direct streaming strategy** (`APP_CONFIG__WRITERS__STRATEGY=direct`), you need to set up Google Cloud BigQuery infrastructure.
 
-```bash
-# Allowed Origins (comma-separated list)
-APP_CONFIG__CORS__ALLOWED_ORIGINS=["https://example.com","https://www.example.com"]
-APP_CONFIG__CORS__ALLOW_CREDENTIALS=true
-APP_CONFIG__CORS__ALLOW_METHODS=["GET","POST","OPTIONS"]
-APP_CONFIG__CORS__ALLOW_HEADERS=["Content-Type","Set-Cookie","Access-Control-Allow-Headers","Access-Control-Allow-Origin","Authorization"]
-```
+### Step 1: Create a BigQuery Dataset
 
-#### Cookie Configuration
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
+2. Click on your project name in the left sidebar
+3. Click **"Create Dataset"**
+4. Enter the dataset ID (must match `APP_CONFIG__WRITERS__BQ__DATASET_ID`)
+5. Configure dataset settings:
+   - **Data location**: Select your preferred region (e.g., `us-central1`)
+   - **Default table expiration**: Optional (leave empty for no expiration)
+   - **Encryption**: Use Google-managed encryption key (default)
+6. Click **"Create Dataset"**
 
-```bash
-# Cookie Settings
-APP_CONFIG__COOKIE__MAX_AGE=63072000
-APP_CONFIG__COOKIE__SECURE=true
-APP_CONFIG__COOKIE__HTTPONLY=true
-APP_CONFIG__COOKIE__SAMESITE=none
-```
+> **Screenshot Placeholder**: BigQuery dataset creation form in Google Cloud Console
+> *Description: Screenshot showing the "Create Dataset" form with dataset ID and location configured*
 
-**Cookie Parameters Explained**:
-- `MAX_AGE`: Cookie expiration time in seconds (default: 2 years)
-- `SECURE`: Only send cookie over HTTPS (set to `false` for local development)
-- `HTTPONLY`: Prevent JavaScript access to cookie (security best practice)
-- `SAMESITE`: Cookie same-site policy (`strict`, `lax`, or `none`)
 
-### Complete .env Example
+The application will automatically create the table with the correct schema, partitioning, and clustering when it first runs.
 
-```bash
-# Environment
-APP_CONFIG__ENVIRONMENT=QA
-
-# Server
-APP_CONFIG__RUN__HOST=0.0.0.0
-APP_CONFIG__RUN__PORT=8000
-
-# API
-APP_CONFIG__API__PREFIX=/api
-APP_CONFIG__API__V1__PREFIX=/v1
-APP_CONFIG__API__V1__STREAMING=/streaming
-APP_CONFIG__API__V1__FETCH=/fetch
-
-# BigQuery
-APP_CONFIG__WRITERS__PROJECT_ID=my-gcp-project
-APP_CONFIG__WRITERS__STRATEGY=direct
-APP_CONFIG__WRITERS__BQ__DATASET_ID=analytics
-APP_CONFIG__WRITERS__BQ__TABLE_ID=events_stream
-APP_CONFIG__WRITERS__BQ__FLUSH_INTERVAL=0.5
-APP_CONFIG__WRITERS__BQ__MAX_BATCH_SIZE=500
-APP_CONFIG__WRITERS__BQ__MAX_QUEUE_SIZE=100000
-
-# Pub/Sub (required even if using direct strategy)
-APP_CONFIG__WRITERS__PUBSUB__TOPIC_ID=streaming-events
-APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID=streaming-events-sub
-APP_CONFIG__WRITERS__PUBSUB__MAX_BYTES=1048576
-APP_CONFIG__WRITERS__PUBSUB__PUBLISH_TIMEOUT=10.0
-APP_CONFIG__WRITERS__PUBSUB__MAX_BATCH_SIZE=500
-APP_CONFIG__WRITERS__PUBSUB__FLUSH_INTERVAL=0.5
-
-# CORS
-APP_CONFIG__CORS__ALLOWED_ORIGINS=["http://localhost:3000","https://example.com"]
-APP_CONFIG__CORS__ALLOW_CREDENTIALS=true
-
-# Cookies
-APP_CONFIG__COOKIE__MAX_AGE=63072000
-APP_CONFIG__COOKIE__SECURE=false
-APP_CONFIG__COOKIE__HTTPONLY=true
-APP_CONFIG__COOKIE__SAMESITE=lax
-```
-
-> **Screenshot Placeholder 2**: Google Cloud Console showing service account with required permissions
-> *Description: Screenshot of IAM & Admin > Service Accounts page showing a service account with BigQuery Data Editor, BigQuery Job User, and Pub/Sub Publisher roles*
+> **Note**: The table will be automatically created by the application on first use. No manual table creation is required.
 
 ---
 
@@ -280,62 +233,125 @@ APP_CONFIG__COOKIE__SAMESITE=lax
 
 If you're using the **Pub/Sub strategy** (`APP_CONFIG__WRITERS__STRATEGY=pubsub`), you need to set up Google Cloud Pub/Sub infrastructure.
 
+> **⚠️ Important**: Before setting up Pub/Sub strategy, you **must first** run the application with **Direct strategy** (`APP_CONFIG__WRITERS__STRATEGY=direct`) to create the BigQuery table. The Pub/Sub subscription requires an existing table to write data to BigQuery.
+
 ### Step 1: Create a Pub/Sub Topic
 
 1. Go to [Google Cloud Console](https://console.cloud.google.com) → Pub/Sub → Topics
 2. Click **"Create Topic"**
 3. Enter the topic ID (must match `APP_CONFIG__WRITERS__PUBSUB__TOPIC_ID`)
-4. Configure topic settings:
-   - **Message retention**: 7 days (default)
-   - **Enable message ordering**: Optional (not required for this use case)
-5. Click **"Create"**
+4. Click **"Create"**
 
 > **Screenshot Placeholder 3**: Pub/Sub topic creation form in Google Cloud Console
 > *Description: Screenshot showing the "Create Topic" form with topic ID field filled in and settings configured*
 
-### Step 2: Create a Pub/Sub Subscription (Optional)
-
-If you plan to consume messages from Pub/Sub (e.g., for a separate BigQuery loader service):
-
-1. Navigate to your topic
-2. Click **"Create Subscription"**
-3. Enter subscription ID (must match `APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID`)
-4. Configure subscription settings:
-   - **Delivery type**: Pull or Push
-   - **Acknowledgment deadline**: 60 seconds (default)
-   - **Message retention**: 7 days
-   - **Expiration**: Never
-5. Click **"Create"**
-
-> **Screenshot Placeholder 4**: Pub/Sub subscription creation form
-> *Description: Screenshot showing subscription creation form with delivery type and retention settings*
-
-### Step 3: Set Up BigQuery Subscription (Recommended)
+### Step 2: Create a BigQuery Subscription
 
 For automatic loading from Pub/Sub to BigQuery:
 
-1. Go to BigQuery Console → Your Dataset
-2. Click **"Create Table"**
-3. Select **"Google Cloud Pub/Sub"** as the source
-4. Configure:
-   - **Project**: Your GCP project
-   - **Topic**: Select the topic created in Step 1
-   - **Table name**: Same as `APP_CONFIG__WRITERS__BQ__TABLE_ID`
-   - **Schema**: Use the schema from `src/storage/bigquery/schema.py` or enable auto-detection
-5. Click **"Create Table"**
+1. Navigate to your Pub/Sub topic (created in Step 1)
+2. Click **"Create Subscription"**
+3. Enter subscription ID (must match `APP_CONFIG__WRITERS__PUBSUB__SUBSCRIPTION_ID`)
+4. Configure subscription settings:
+   - **Delivery type**: Write to BigQuery
+   - **Schema Configuration**: Use table schema
+   - **Write metadata**: True
+5. Select the existing BigQuery table (created when running with Direct strategy)
+6. Click **"Create"**
 
-> **Screenshot Placeholder 5**: BigQuery table creation form with Pub/Sub as source
-> *Description: Screenshot showing BigQuery "Create Table" wizard with Pub/Sub selected as data source and topic configured*
+> **Screenshot Placeholder 4**: Pub/Sub subscription creation form with BigQuery write configuration
+> *Description: Screenshot showing subscription creation form with "Write to BigQuery" delivery type, schema configuration, and write metadata settings*
 
-### Step 4: Grant Permissions
+---
 
-Ensure your service account has the following IAM roles:
-- `roles/pubsub.publisher` (for publishing messages)
-- `roles/bigquery.dataEditor` (if using BigQuery subscription)
-- `roles/bigquery.jobUser` (if using BigQuery subscription)
+## Google Cloud Load Balancer Setup
 
-> **Screenshot Placeholder 6**: IAM permissions page showing service account with Pub/Sub Publisher role
-> *Description: Screenshot of IAM & Admin > IAM page showing the service account with "Pub/Sub Publisher" role assigned*
+> **⚠️ Required for IP and Geolocation Collection**: If you want to collect client IP addresses and geolocation data, you **must** set up a Google Cloud Load Balancer. The Load Balancer adds specific headers (`X-Forwarded-For`, `X-Client-Geo-*`) that contain the client's IP address and geographic information, which Cloud Run cannot provide directly.
+
+### Step 1: Reserve a Static IP Address
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → VPC network → IP addresses
+2. Click **"Reserve External Static IP Address"** (or **"Reserve Internal Static IP Address"** if using internal load balancer)
+3. Configure the IP address:
+   - **Name**: Enter a name for the IP address (e.g., `real-streaming-lb-ip`)
+   - **IP version**: IPv4
+   - **Type**: 
+     - **Global** - for HTTP(S) Load Balancer (recommended)
+     - **Regional** - for Network Load Balancer
+   - **Network tier**: Premium (recommended for better performance)
+4. Click **"Reserve"**
+5. **Note the IP address** - you'll need it for DNS configuration later
+
+> **Screenshot Placeholder**: Static IP address reservation form
+> *Description: Screenshot showing the IP address reservation form with global type and premium network tier selected*
+
+### Step 2: Create HTTP(S) Load Balancer
+
+1. Go to [Google Cloud Console](https://console.cloud.google.com) → Network Services → Load Balancing
+2. Click **"Create Load Balancer"**
+3. Under **"HTTP(S) Load Balancing"**, click **"Start Configuration"**
+4. Select **"Internet facing"** (or **"Internal"** if using internal load balancer)
+5. Select **"Global"** (recommended) or **"Regional"** based on your needs
+6. Click **"Continue"**
+
+### Step 3: Configure Backend Service
+
+1. Click **"Backend Configuration"**
+2. Click **"Create or select backend services & backend buckets"**
+3. Click **"Backend services"** → **"Create Backend Service"**
+4. Configure backend service:
+   - **Name**: Enter a name (e.g., `real-streaming-backend`)
+   - **Backend type**: Select **"Serverless NEG"** (Network Endpoint Group)
+   - **Serverless NEG**: Click **"Create Serverless NEG"**
+     - **Name**: Enter a name (e.g., `real-streaming-neg`)
+     - **Region**: Select the region where your Cloud Run service is deployed
+     - **Cloud Run service**: Select your Cloud Run service name
+     - Click **"Create"**
+   - **Protocol**: HTTP
+   - **Port**: 80 (or 443 for HTTPS)
+   - **Timeout**: 30 seconds (default)
+5. Click **"Create"** to create the backend service
+6. Click **"Done"** to return to load balancer configuration
+
+### Step 4: Configure Frontend
+
+1. Click **"Frontend Configuration"**
+2. Configure frontend:
+   - **Protocol**: HTTPS (recommended) or HTTP
+   - **IP address**: Select the static IP address reserved in Step 1
+   - **Port**: 443 (for HTTPS) or 80 (for HTTP)
+   - **Certificate**: 
+     - For HTTPS: Create or select an SSL certificate
+     - For HTTP: No certificate needed
+3. Click **"Done"**
+
+### Step 5: Review and Create
+
+1. Review all configurations
+2. Enter a **name** for the load balancer (e.g., `real-streaming-lb`)
+3. Click **"Create"**
+
+> **Note**: It may take a few minutes for the load balancer to be provisioned and become active.
+
+### Step 6: Configure DNS (Optional but Recommended)
+
+1. Go to your DNS provider (e.g., Google Cloud DNS, Cloudflare, etc.)
+2. Create an **A record** pointing your domain to the static IP address reserved in Step 1
+3. For HTTPS, ensure your SSL certificate covers your domain name
+
+### Important Headers
+
+Once the Load Balancer is configured, it will automatically add the following headers to requests:
+
+- `X-Forwarded-For`: Client's original IP address
+- `X-Client-Geo-Country`: Client's country code (if available)
+- `X-Client-Geo-Region`: Client's region/state (if available)
+- `X-Client-Geo-City`: Client's city (if available)
+
+These headers are automatically parsed by the application to enrich event data with geolocation information.
+
+> **Screenshot Placeholder**: Load Balancer configuration showing backend service and frontend configuration
+> *Description: Screenshot showing the Load Balancer configuration with Serverless NEG backend service and HTTPS frontend with static IP*
 
 ---
 
@@ -343,7 +359,7 @@ Ensure your service account has the following IAM roles:
 
 ### Required Google Cloud IAM Roles
 
-Your service account needs the following permissions:
+Your account needs the following permissions:
 
 #### For Direct Streaming Strategy:
 - `roles/bigquery.dataEditor` - Write data to BigQuery tables
@@ -355,43 +371,42 @@ Your service account needs the following permissions:
 #### For Cloud Logging (Production):
 - `roles/logging.logWriter` - Write logs to Cloud Logging
 
-### Setting Up Permissions
-
-1. Go to [IAM & Admin](https://console.cloud.google.com/iam-admin/iam) in Google Cloud Console
-2. Find your service account
-3. Click **"Edit"** (pencil icon)
-4. Click **"Add Another Role"**
-5. Select the required roles
-6. Click **"Save"**
-
-Alternatively, use gcloud CLI:
-```bash
-gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:SERVICE_ACCOUNT_EMAIL" \
-  --role="roles/bigquery.dataEditor"
-
-gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:SERVICE_ACCOUNT_EMAIL" \
-  --role="roles/bigquery.jobUser"
-
-gcloud projects add-iam-policy-binding PROJECT_ID \
-  --member="serviceAccount:SERVICE_ACCOUNT_EMAIL" \
-  --role="roles/pubsub.publisher"
-```
-
----
 
 ## Running the Application
 
-### Local Development
+### Local Development {#local-development}
 
+#### Prerequisites
+
+Before running locally, make sure you have:
+
+1. **Python 3.10+** installed
+2. **Google Cloud credentials** configured (see [Installation](#installation) section)
+3. **Environment variables** configured (see [Configuration](#configuration) section)
+
+#### Quick Setup
+
+1. **Install dependencies**:
 ```bash
-# Activate virtual environment
-source venv/bin/activate  # Linux/Mac
-# or
-venv\Scripts\activate  # Windows
+pip install --upgrade pip
+pip install -r requirements.txt
+```
 
-# Run with auto-reload
+2. **Set up Application Default Credentials**:
+```bash
+gcloud auth application-default login
+```
+
+3. **Configure environment variables**:
+```bash
+# Copy the template file
+cp .env.template src/.env
+
+# Edit src/.env and update the values
+```
+
+4. **Run the application**:
+```bash
 uvicorn src.main:main_app --host 0.0.0.0 --port 8000 --reload
 ```
 
@@ -403,27 +418,51 @@ The API will be available at:
 > **Screenshot Placeholder 7**: FastAPI Swagger UI showing the streaming endpoint
 > *Description: Screenshot of the FastAPI automatic documentation at /docs showing the POST /api/v1/streaming/{stream_id} endpoint with request/response schemas*
 
-### Production Deployment (Google Cloud Run)
+### Production Deployment (Google Cloud Run) {#production-deployment-google-cloud-run}
 
-The project includes a `cloudbuild.yaml` for automated deployment:
+This project is designed to run on **Google Cloud Run**. The project includes a `cloudbuild.yaml` configuration file for automated deployment using Google Cloud Build.
+
+#### Prerequisites
+
+- Google Cloud Project with Cloud Run API enabled
+- Artifact Registry repository for Docker images
+- Cloud Build API enabled
+- Service account with required permissions (see [Permissions](#permissions) section)
+
+#### Deployment Steps
 
 1. **Set Cloud Build substitution variables**:
    - `_AR_HOSTNAME`: Artifact Registry hostname (e.g., `us-central1-docker.pkg.dev`)
    - `_AR_REPO`: Artifact Registry repository name
-   - `_SERVICE_NAME`: Cloud Run service name
+   - `_SERVICE_NAME`: Cloud Run service name (e.g., `real-streaming`)
    - `_DEPLOY_REGION`: Deployment region (e.g., `us-central1`)
    - `_PLATFORM`: Platform (`managed`)
 
 2. **Trigger Cloud Build**:
 ```bash
 gcloud builds submit --config=cloudbuild.yaml \
-  --substitutions=_AR_HOSTNAME=us-central1-docker.pkg.dev,_AR_REPO=my-repo,_SERVICE_NAME=stream-events,_DEPLOY_REGION=us-central1,_PLATFORM=managed
+  --substitutions=_AR_HOSTNAME=us-central1-docker.pkg.dev,_AR_REPO=my-repo,_SERVICE_NAME=real-streaming,_DEPLOY_REGION=us-central1,_PLATFORM=managed
 ```
 
-3. **Set environment variables in Cloud Run**:
+   This will:
+   - Build the Docker image
+   - Push it to Artifact Registry
+   - Deploy to Cloud Run
+
+3. **Configure environment variables in Cloud Run**:
    - Go to Cloud Run → Your Service → Edit & Deploy New Revision
-   - Add environment variables (same as `.env` but without `APP_CONFIG__` prefix)
-   - Set `GOOGLE_APPLICATION_CREDENTIALS` to use the default service account
+   - Add environment variables (same format as `.env` file, with `APP_CONFIG__` prefix)
+   - The service will automatically use the default service account credentials (Application Default Credentials)
+
+#### Environment Variables in Cloud Run
+
+When deploying to Cloud Run, set environment variables in the Cloud Run service configuration. Use the same variable names as in your `.env` file (with `APP_CONFIG__` prefix). For example:
+
+- `APP_CONFIG__ENVIRONMENT=PROD`
+- `APP_CONFIG__WRITERS__PROJECT_ID=your-gcp-project-id`
+- `APP_CONFIG__WRITERS__BQ__DATASET_ID=analytics`
+- `APP_CONFIG__WRITERS__BQ__TABLE_ID=table_name`
+- `APP_CONFIG__CORS__ALLOWED_ORIGINS=["https://yourdomain.com"]`
 
 > **Screenshot Placeholder 8**: Cloud Run service configuration page showing environment variables
 > *Description: Screenshot of Cloud Run service edit page with environment variables section showing all APP_CONFIG variables configured*
@@ -642,7 +681,7 @@ gcloud logging read "resource.type=cloud_run_revision AND resource.labels.servic
 ## Project Structure
 
 ```
-epmgoogrsd-stream-events/
+real-streaming/
 ├── src/
 │   ├── api/
 │   │   ├── api_v1/
