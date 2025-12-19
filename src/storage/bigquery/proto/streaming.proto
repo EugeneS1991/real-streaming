@@ -1,0 +1,155 @@
+syntax = "proto2";
+
+message StreamingMessage {
+
+  message Value {
+    optional string string_value = 1;
+    optional int64 int_value = 2;
+    optional float float_value = 3;
+  }
+
+  message Event_params {
+    optional string key = 1;
+    optional Value value = 2;
+  }
+
+  message Privacy_info {
+    optional bool ad_storage = 1;
+    optional bool ad_user_data = 2;
+    optional bool ad_personalization = 3;
+    optional bool analytics_storage = 4;
+    optional bool functionality_storage = 5;
+    optional bool personalization_storage = 6;
+    optional bool security_storage = 7;
+  }
+
+  message Value1 {
+    optional string string_value = 1;
+    optional int64 int_value = 2;
+    optional float float_value = 3;
+    optional int64 set_timestamp_micros = 4;
+  }
+
+  message User_properties {
+    optional string key = 1;
+    optional Value1 value = 2;
+  }
+
+  message Web_info {
+    optional string browser = 1;
+    optional string browser_version = 2;
+  }
+
+  message Device {
+    optional string category = 1;
+    optional string mobile_brand_name = 2;
+    optional string mobile_model_name = 3;
+    optional string mobile_marketing_name = 4;
+    optional string mobile_os_hardware_model = 5;
+    optional string operating_system = 6;
+    optional string operating_system_version = 7;
+    optional string vendor_id = 8;
+    optional string advertising_id = 9;
+    optional string language = 10;
+    optional string is_limited_ad_tracking = 11;
+    optional Web_info web_info = 12;
+    optional bool is_bot = 13;
+    optional string user_agent = 14;
+  }
+
+  message Geo {
+    optional string country = 1;
+    optional string region = 2;
+    optional string city = 3;
+  }
+
+  message App_info {
+    optional string id = 1;
+    optional string version = 2;
+    optional string install_store = 3;
+    optional string firebase_app_id = 4;
+    optional string install_source = 5;
+  }
+
+  message Collected_traffic_source {
+    optional string manual_source = 1;
+    optional string manual_medium = 2;
+    optional string manual_campaign_id = 3;
+    optional string manual_campaign_name = 4;
+    optional string manual_term = 5;
+    optional string manual_content = 6;
+    optional string manual_source_platform = 7;
+    optional string manual_creative_format = 8;
+    optional string manual_marketing_tactic = 9;
+    optional string gclid = 10;
+    optional string dclid = 11;
+    optional string srsltid = 12;
+    optional string fbclid = 13;
+  }
+
+  message Ecommerce {
+    optional string transaction_id = 1;
+    optional float value = 2;
+    optional string currency = 3;
+    optional string coupon = 4;
+    optional string payment_type = 5;
+    optional string shipping_tier = 6;
+    optional string item_list_id = 7;
+    optional string item_list_name = 8;
+    optional string promotion_id = 9;
+    optional string promotion_name = 10;
+    optional string creative_name = 11;
+    optional string creative_slot = 12;
+    optional int32 total_item_quantity = 13;
+  }
+
+
+  message Items {
+    optional string item_id = 1;
+    optional string item_name = 2;
+    optional string affiliation = 3;
+    optional string coupon = 4;
+    optional float discount = 5;
+    optional int32 index = 6;
+    optional string item_brand = 7;
+    optional string item_category = 8;
+    optional string item_category2 = 9;
+    optional string item_category3 = 10;
+    optional string item_category4 = 11;
+    optional string item_category5 = 12;
+    optional string item_list_id = 13;
+    optional string item_list_name = 14;
+    optional string item_variant = 15;
+    optional string location_id = 16;
+    optional float price = 17;
+    optional string promotion_id = 18;
+    optional string promotion_name = 19;
+    optional string creative_name = 20;
+    optional string creative_slot = 21;
+    optional int32 quantity = 22;
+  }
+
+
+  optional string date = 1;
+  optional int64 event_timestamp = 2;
+  optional string event_name = 3;
+  repeated Event_params event_params = 4;
+  optional string user_id = 5;
+  optional string user_pseudo_id = 6;
+  optional Privacy_info privacy_info = 7;
+  repeated User_properties user_properties = 8;
+  optional Device device = 9;
+  optional Geo geo = 10;
+  optional App_info app_info = 11;
+  optional Collected_traffic_source collected_traffic_source = 12;
+  optional int64 stream_id = 13;
+  optional Ecommerce ecommerce = 14;
+  repeated Items items = 15;
+  optional string ip = 16;
+  optional string synced_at_utc_ = 17;
+  optional int64 synced_at_micros_ = 18;
+  optional string subscription_name = 19;
+  optional string message_id = 20;
+  optional string publish_time = 21;
+  optional string attributes = 22;
+}
