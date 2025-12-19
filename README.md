@@ -338,6 +338,41 @@ For automatic loading from Pub/Sub to BigQuery:
 
 > *Screenshot showing subscription creation form with "Write to BigQuery" delivery type, "Use table schema" configuration, and "Write metadata" enabled*
 
+### Step 4: Test the Pub/Sub Setup
+
+1. **Restart your application** with the updated configuration (Pub/Sub strategy):
+```bash
+uvicorn src.main:main_app --host 0.0.0.0 --port 8080 --reload
+```
+
+2. **Send a test request** via API Documentation:
+   - Open `http://localhost:8080/docs` in your browser
+   - Find the `POST /api/v1/streaming/{stream_id}` endpoint
+   - Click **"Try it out"**
+   - Set `stream_id` to `1` (or any number)
+   - Fill in the request body using the schema shown in Swagger UI
+   - Click **"Execute"**
+
+![Test Request in Swagger UI](docs/images/test_request.png)
+
+3. **Verify data in BigQuery**:
+   - Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
+   - Navigate to your dataset and table
+   - Click on the table name
+   - Click **"Preview"** tab to view the data
+   - Or run a SQL query:
+```sql
+SELECT * FROM `your_project_id.your_dataset_id.your_table_id`
+ORDER BY event_timestamp DESC
+LIMIT 10;
+```
+
+You should see your test event data in the table:
+
+![Data in BigQuery Table](docs/images/data_in_bq.png)
+
+> **Note**: With Pub/Sub strategy, data flows through Pub/Sub topic → Subscription → BigQuery table. There may be a slight delay before data appears in BigQuery.
+
 ---
 
 > **Note**: This project is designed to run on **Google Cloud Run**. For production deployment, see the [Production Deployment](#production-deployment-google-cloud-run) section.
