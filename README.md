@@ -511,52 +511,98 @@ After the deployment completes:
 2. Click **"Create Load Balancer"**
 3. Under **"HTTP(S) Load Balancing"**, click **"Start Configuration"**
 4. Select **"Internet facing"** (or **"Internal"** if using internal load balancer)
-5. Select **"Global"** (recommended) or **"Regional"** based on your needs
+5. Select **"Global"** (recommended)
 6. Click **"Configure"**
 
 #### Step 2: Configure Backend Service
 
 1. Click **"Backend Configuration"**
-2. Click **"Create or select backend services & backend buckets"**
+2. Click **"Create or select backend services"**
 3. Click **"Backend services"** → **"Create Backend Service"**
 4. Configure backend service:
    - **Name**: Enter a name (e.g., `real-streaming-backend`)
    - **Backend type**: Select **"Serverless NEG"** (Network Endpoint Group)
+   - Click **"Add a backend"**
    - **Serverless NEG**: Click **"Create Serverless NEG"**
      - **Name**: Enter a name (e.g., `real-streaming-neg`)
      - **Region**: Select the region where your Cloud Run service is deployed
      - **Cloud Run service**: Select your Cloud Run service name
      - Click **"Create"**
    - **Protocol**: HTTP
-   - **Port**: 80 (or 443 for HTTPS)
-   - **Timeout**: 30 seconds (default)
-5. Click **"Create"** to create the backend service
-6. Click **"Done"** to return to load balancer configuration
+5. **Disable Cloud CDN**: Make sure **"Enable Cloud CDN"** is **disabled** (unchecked)
+6. **Configure Custom Headers**: Scroll down and open **"Advanced configurations"** section
+   - In **"Custom request headers"**, add the following headers:
+     - **Header name 1**: `X-Client-Geo-Country` → **Header value 1**: `{client_region}`
+     - **Header name 2**: `X-Client-Geo-State` → **Header value 2**: `{client_region_subdivision}`
+     - **Header name 3**: `X-Client-Geo-City` → **Header value 3**: `{client_city}`
+   - In **"Custom response headers"**, add the same headers:
+     - **Header name 1**: `X-Client-Geo-Country` → **Header value 1**: `{client_region}`
+     - **Header name 2**: `X-Client-Geo-State` → **Header value 2**: `{client_region_subdivision}`
+     - **Header name 3**: `X-Client-Geo-City` → **Header value 3**: `{client_city}`
+
+![Backend Service Custom Headers](docs/images/backend_headers.png)
+
+> *Screenshot showing Advanced configurations section with Custom request headers and Custom response headers configured*
+
+7. Click **"Create"** to create the backend service
+8. Click **"Done"** to return to load balancer configuration
 
 #### Step 3: Configure Frontend
 
 1. Click **"Frontend Configuration"**
 2. Configure frontend:
    - **Protocol**: HTTPS (recommended) or HTTP
-   - **IP address**: Select the static IP address reserved in Step 1
+     - **Note**: If you don't have a domain yet, you can select **HTTP** for now. You can switch to HTTPS later when you configure your domain and SSL certificate.
+   - **IP address**: Select the static IP address reserved in Step 3 (from Deployment to Cloud Run section)
    - **Port**: 443 (for HTTPS) or 80 (for HTTP)
    - **Certificate**: 
      - For HTTPS: Create or select an SSL certificate
      - For HTTP: No certificate needed
 3. Click **"Done"**
 
-#### Step 4: Review and Create
+#### Step 4: Configure Load Balancer Settings
+
+1. **Load Balancer name**: Enter a name (e.g., `real-streaming-lb`)
+
+#### Step 5: Review and Create
 
 1. Review all configurations
-2. Enter a **name** for the load balancer (e.g., `real-streaming-lb`)
-3. Click **"Create"**
+2. Click **"Create"**
 
 > **Note**: It may take a few minutes for the load balancer to be provisioned and become active.
 
-#### Step 5: Configure DNS (Optional but Recommended)
+#### Step 6: Verify Load Balancer Access
+
+After the Load Balancer is created and active:
+
+1. Go to your Load Balancer details page in Google Cloud Console
+2. Find the **Frontend IP address** (the static IP you reserved earlier)
+3. Open `http://{your_reserved_ip}/docs` in your browser (e.g., `http://34.123.45.67/docs`)
+4. You should see the Swagger UI documentation
+5. Test the API by sending a request:
+   - Find the `POST /api/v1/streaming/{stream_id}` endpoint
+   - Click **"Try it out"**
+   - Set `stream_id` to `1` (or any number)
+   - Fill in the request body using the schema shown in Swagger UI
+   - Click **"Execute"**
+   - You should receive a `200 OK` response with `{"status": "ok"}`
+   - **Verify headers**: Open browser Developer Tools (F12) → **Network** tab → Click on the request → Check **Headers** section
+   - You should see the following headers in the response:
+     - `X-Client-Geo-Country`: Country code (e.g., `UA`)
+     - `X-Client-Geo-State`: Region/state code (e.g., `UA77`)
+     - `X-Client-Geo-City`: City name (e.g., `Chernivtsi`)
+   - These headers confirm that the Load Balancer is correctly forwarding geolocation information
+
+![Test Request Headers via Load Balancer](docs/images/test_request_headers.png)
+
+> *Screenshot showing Swagger UI with Network tab displaying response headers including X-Client-Geo-* headers from Load Balancer*
+
+> **Note**: If you're using HTTP (not HTTPS), make sure to use `http://` instead of `https://` in the URL.
+
+#### Step 7: Configure DNS (Optional but Recommended)
 
 1. Go to your DNS provider (e.g., Google Cloud DNS, Cloudflare, etc.)
-2. Create an **A record** pointing your domain to the static IP address reserved in Step 1
+2. Create an **A record** pointing your domain to the static IP address reserved in Step 3 (from Deployment to Cloud Run section)
 3. For HTTPS, ensure your SSL certificate covers your domain name
 
 ### Important Headers
