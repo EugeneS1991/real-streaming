@@ -55,13 +55,21 @@ class WritersConfig(BaseModel):
 class CorsConfig(BaseModel):
     allowed_origins: list[str]
     allow_credentials: bool = True
-    allow_methods: list[str] = ["GET", "POST", "OPTIONS"]
+    allow_methods: list[str] = ["GET", "POST", "OPTIONS", "DELETE", "PATCH", "PUT"]
     allow_headers: list[str] = [
         "Content-Type",
         "Set-Cookie",
         "Access-Control-Allow-Headers",
         "Access-Control-Allow-Origin",
         "Authorization",
+        # Добавьте эти стандартные заголовки браузера:
+        "Accept",
+        "Origin",
+        "X-Requested-With",
+        # Если используете кастомные заголовки для геолокации:
+        "x-client-geo-country",
+        "x-client-geo-state", 
+        "x-client-geo-city",
     ]
 
 class CookieConfig(BaseModel):
