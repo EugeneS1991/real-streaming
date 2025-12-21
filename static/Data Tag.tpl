@@ -1304,7 +1304,7 @@ function getCustomData(data, dtagLoaded) {
 function storeData(dataToStore) {
   let dataToStoreCookieResult = {};
   let dataToStoreLocalStorageResult = {};
-  let dataToStoreCookie = getCookieValues('stape')[0];
+  let dataToStoreCookie = getCookieValues('my_streaming')[0];
 
   if (dataToStoreCookie) {
     dataToStoreCookie = JSON.parse(dataToStoreCookie);
@@ -1318,7 +1318,7 @@ function storeData(dataToStore) {
   }
 
   if (localStorage) {
-    let dataToStoreLocalStorage = localStorage.getItem('stape');
+    let dataToStoreLocalStorage = localStorage.getItem('my_streaming');
 
     if (dataToStoreLocalStorage) {
       dataToStoreLocalStorage = JSON.parse(dataToStoreLocalStorage);
@@ -1355,13 +1355,13 @@ function storeData(dataToStore) {
 
   if (localStorage && getObjectLength(dataToStoreLocalStorageResult) !== 0) {
     localStorage.setItem(
-      'stape',
+      'my_streaming',
       JSON.stringify(dataToStoreLocalStorageResult)
     );
   }
 
   if (getObjectLength(dataToStoreCookieResult) !== 0) {
-    setCookie('stape', JSON.stringify(dataToStoreCookieResult), {
+    setCookie('my_streaming', JSON.stringify(dataToStoreCookieResult), {
       secure: true,
       domain: 'auto',
       path: '/',
@@ -1942,7 +1942,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "stape"
+                    "string": "my_streaming"
                   },
                   {
                     "type": 8,
@@ -2016,7 +2016,7 @@ ___WEB_PERMISSIONS___
             "listItem": [
               {
                 "type": 1,
-                "string": "stape"
+                "string": "my_streaming"
               },
               {
                 "type": 1,
@@ -2175,7 +2175,7 @@ ___WEB_PERMISSIONS___
                 "mapValue": [
                   {
                     "type": 1,
-                    "string": "stape"
+                    "string": "my_streaming"
                   },
                   {
                     "type": 1,
