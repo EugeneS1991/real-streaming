@@ -126,7 +126,7 @@ class DataToInsert(BaseModel):
     event_name: str | None
     event_params: list[EventParams] | None
     user_id: str | None
-    user_pseudo_id: str 
+    user_pseudo_id: str | None
     privacy_info: PrivacyInfo | None
     user_properties: list[EventParams] | None
     device: Device | None
