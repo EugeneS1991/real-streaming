@@ -62,11 +62,11 @@ class CorsConfig(BaseModel):
         "Access-Control-Allow-Headers",
         "Access-Control-Allow-Origin",
         "Authorization",
-        # Добавьте эти стандартные заголовки браузера:
+        # standard browser headers
         "Accept",
         "Origin",
         "X-Requested-With",
-        # Если используете кастомные заголовки для геолокации:
+        # custom headers for geolocation
         "x-client-geo-country",
         "x-client-geo-state", 
         "x-client-geo-city",
