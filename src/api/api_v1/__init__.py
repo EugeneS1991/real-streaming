@@ -15,3 +15,11 @@ router.include_router(
     tags=["FETCH"],
     prefix=settings.api.v1.fetch,
 )
+
+# Uncomment to enable local dev routes (not for production)
+from src.api.api_v1.dev.router import router as dev_router
+router.include_router(
+    dev_router,
+    tags=["DEV"],
+    prefix="/dev",
+)

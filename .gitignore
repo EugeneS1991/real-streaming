@@ -11,6 +11,8 @@ code_example
 envir.py
 src/.env
 /cert
+# Local development routers - not for production
+src/api/api_v1/dev/
 __pycache__/
 # Byte-compiled / optimized / DLL files
 *.py[cod]

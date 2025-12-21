@@ -517,26 +517,6 @@ ___TEMPLATE_PARAMETERS___
       },
       {
         "type": "TEXT",
-        "name": "request_path",
-        "displayName": "Path",
-        "simpleValueType": true,
-        "defaultValue": "/api/v1/streaming/",
-        "help": "The path used for sending requests to the GTM Server Side container. Stream ID will be automatically appended to this path.",
-        "valueValidators": [
-          {
-            "type": "NON_EMPTY"
-          },
-          {
-            "type": "REGEX",
-            "args": [
-              "^/.*"
-            ],
-            "errorMessage": "The path must start with /."
-          }
-        ]
-      },
-      {
-        "type": "TEXT",
         "name": "protocol_version",
         "displayName": "Protocol version",
         "simpleValueType": true,
@@ -553,17 +533,18 @@ ___TEMPLATE_PARAMETERS___
         "name": "data_tag_load_script_url",
         "displayName": "Data Tag Script URL",
         "simpleValueType": true,
-        "help": "URL where to load Data tag script from, by default it will be loaded from \u003cI\u003ehttps://stapecdn.com/dtag/${data-script-version}.js\u003c/i\u003e. This can be parameterized with \u003ci\u003e${data-script-version}\u003c/i\u003e in order to load the correct version for this tag.",
+        "help": "\u003cb\u003eIMPORTANT:\u003c/b\u003e Replace \u003ci\u003eyour_domain_name\u003c/i\u003e with your actual server domain (the same as in GTM Server Side URL field).\u003cbr/\u003eExample: If your server is \u003ci\u003ehttps://example.com\u003c/i\u003e, use \u003ci\u003ehttps://example.com/api/v1/fetch/v6.js\u003c/i\u003e",
         "valueValidators": [
           {
             "type": "REGEX",
             "args": [
-              "^(https://).*(\\.js)$"
-            ]
+              "^(https://|http://).*(\\.js)$"
+            ],
+            "errorMessage": "URL must start with https:// or http:// and end with .js"
           }
         ],
         "alwaysInSummary": false,
-        "defaultValue": "https://stapecdn.com/dtag/v8.js"
+        "defaultValue": "https://your_domain_name/api/v1/fetch/v6.js"
       },
       {
         "type": "CHECKBOX",
@@ -732,14 +713,7 @@ let requestType = determinateRequestType();
 const normalizedServerUrl = normalizeServerUrl();
 
 if (requestType === 'post') {
-  const dataScriptVersion = 'v8';
-  const dataTagScriptUrl =
-    typeof data.data_tag_load_script_url !== 'undefined'
-      ? data.data_tag_load_script_url.replace(
-          '${data-script-version}',
-          dataScriptVersion
-        )
-      : 'https://stapecdn.com/dtag/' + dataScriptVersion + '.js';
+  const dataTagScriptUrl = data.data_tag_load_script_url || 'https://your_domain_name/api/v1/fetch/v6.js';
   injectScript(
     dataTagScriptUrl,
     sendPostRequest,
@@ -1064,8 +1038,20 @@ function sendPostRequest() {
 }
 
 function sendGetRequest() {
+  // Extract stream_id from parameter or URL
+  const streamId = extractStreamId();
+  
+  // Validate stream_id
+  if (!streamId) {
+    data.gtmOnFailure();
+    return;
+  }
+  
+  // Build endpoint with stream_id
+  const endpoint = buildEndpoint(streamId);
+  
   sendPixel(
-    addDataForGetRequest(data, buildEndpoint()),
+    addDataForGetRequest(data, endpoint),
     data.gtmOnSuccess,
     data.gtmOnFailure
   );
@@ -1073,7 +1059,8 @@ function sendGetRequest() {
 
 function normalizeServerUrl() {
   let gtmServerDomain = data.gtm_server_domain;
-  let requestPath = data.request_path;
+  // Hardcoded path - cannot be changed by user
+  const requestPath = '/api/v1/streaming/';
 
   // Add 'https://' if gtmServerDomain doesn't start with it
   if (gtmServerDomain.indexOf('http://') !== 0 && gtmServerDomain.indexOf('https://') !== 0) {
@@ -1085,19 +1072,15 @@ function normalizeServerUrl() {
     gtmServerDomain = gtmServerDomain.slice(0, -1);
   }
 
-  // Adds slash to first position of requestPath if doesn't start with it
-  if (requestPath.charAt(0) !== '/') {
-    requestPath = '/' + requestPath;
-  }
-
   return {
     gtmServerDomain: gtmServerDomain,
     requestPath: requestPath
   };
 }
 
-function buildEndpoint() {
-  return normalizedServerUrl.gtmServerDomain + normalizedServerUrl.requestPath;
+function buildEndpoint(streamId) {
+  const requestPath = streamId ? buildRequestPath(streamId) : normalizedServerUrl.requestPath;
+  return normalizedServerUrl.gtmServerDomain + requestPath;
 }
 
 function addRequiredDataForPostRequest(data, eventData) {
