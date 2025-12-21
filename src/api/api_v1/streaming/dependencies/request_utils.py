@@ -36,6 +36,7 @@ async def request_handler(
     region: str | None = Header(None, alias="x-client-geo-state"),
     city: str | None = Header(None, alias="x-client-geo-city"),
 ) -> RequestData:
+    print(uid_cookie)
     """
     Enrich incoming payload with server-side data for BigQuery.
     Session logic removed - calculated later via OWOX BI Transformation.
@@ -43,7 +44,7 @@ async def request_handler(
     return RequestData(
         **body.model_dump(),
         stream_id=stream_id,
-        user_pseudo_id=uid_cookie or str(uuid4()),
+        user_pseudo_id=uid_cookie,
         device=await DeviceParser.parse(user_agent, accept_language),
         geo=Geo(country=country, region=region, city=city),
         collected_traffic_source=TrafficSourceParser.parse(body.event_params),
