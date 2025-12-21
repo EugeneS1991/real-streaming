@@ -494,26 +494,18 @@ ___TEMPLATE_PARAMETERS___
         "macrosInSelect": false,
         "selectItems": [
           {
-            "value": "auto",
-            "displayValue": "Auto"
-          },
-          {
             "value": "post",
             "displayValue": "POST"
-          },
-          {
-            "value": "get",
-            "displayValue": "GET"
           }
         ],
         "simpleValueType": true,
-        "defaultValue": "auto",
+        "defaultValue": "post",
         "valueValidators": [
           {
             "type": "NON_EMPTY"
           }
         ],
-        "help": "We highly recommend using \u003cb\u003eAuto\u003c/b\u003e. Change this only if you know what you are doing."
+        "help": "Currently only POST requests are supported. GET support will be added in the future."
       },
       {
         "type": "TEXT",
