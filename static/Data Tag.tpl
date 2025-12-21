@@ -925,14 +925,12 @@ function buildUserPropertiesArray(data) {
     for (let userDataKey in data.user_data) {
       const item = data.user_data[userDataKey];
       if (item.name && item.value !== undefined && item.value !== null && item.value !== '') {
-        // Skip user_id as it's handled separately
-        if (item.name !== 'user_id') {
-          const paramValue = convertToEventParamsValue(item.value);
-          userProperties.push({
-            key: item.name,
-            value: paramValue
-          });
-        }
+        // Include user_id in user_properties as well as on top level
+        const paramValue = convertToEventParamsValue(item.value);
+        userProperties.push({
+          key: item.name,
+          value: paramValue
+        });
       }
     }
   }
