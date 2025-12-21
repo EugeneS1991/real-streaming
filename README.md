@@ -41,8 +41,9 @@ Choose your deployment option:
 
 - 🚀 **[Run Locally](#local-development)** - Quick setup for local development and testing
 - ☁️ **[Deploy to Cloud Run](#production-deployment-google-cloud-run)** - Production deployment on Google Cloud Run
+- 🏷️ **[GTM Integration](#google-tag-manager-gtm-integration)** - Set up Google Tag Manager template to send events from your website
 
-> **Recommended**: Start with local development to test the application, then proceed to cloud deployment.
+> **Recommended**: Start with local development to test the application, then proceed to cloud deployment. After deployment, integrate with your website using the GTM template.
 
 ---
 
@@ -598,3 +599,122 @@ After the Load Balancer is created and active:
 > *Screenshot showing Swagger UI with Network tab displaying response headers including X-Client-Geo-* headers from Load Balancer*
 
 > **Note**: If you're using HTTP (not HTTPS), make sure to use `http://` instead of `https://` in the URL.
+
+---
+
+## Google Tag Manager (GTM) Integration
+
+This section explains how to integrate the Real Streaming service with your website using Google Tag Manager (GTM) and the custom **Real Streaming Tag** template.
+
+### Step 1: Download the GTM Template
+
+1. Download the `Real Streaming Tag.tpl` template file from the repository (`static/Real Streaming Tag.tpl`)
+
+### Step 2: Import the Template into GTM
+
+1. Open your GTM container in [Google Tag Manager](https://tagmanager.google.com)
+2. Navigate to **Templates** in the left sidebar
+3. Click the **"New"** button
+
+![GTM New Button](docs/images/gtm_new_button.png)
+
+4. Click the **three dots menu** (⋮) in the top right corner
+5. Select **"Import"** from the dropdown menu
+6. Upload the `Real Streaming Tag.tpl` file you downloaded
+7. Click **"Save"** to complete the import
+
+![GTM Template Import](docs/images/gtm_template_import.png)
+
+> *Screenshot showing the Import option in the three dots menu and the template import dialog*
+
+### Step 3: Create and Configure a Tag
+
+1. Navigate to **Tags** in the left sidebar
+2. Click **"New"** to create a new tag
+3. Click on **"Tag Configuration"** and select **"Real Streaming Tag"** from the list of tag types
+4. Configure the tag settings:
+
+   **Required Fields:**
+   - **Stream ID**: Enter your stream ID (must be an integer, e.g., `1`, `2`, `3`)
+   - **Server URL**: Enter your backend server URL in the format `https://example.com` (without trailing slash)
+     - Example: `https://stream.example.com` or `https://api.yourdomain.com`
+     - This should match the domain configured in your Load Balancer or Cloud Run service
+
+![GTM Tag Settings](docs/images/gtm_tags_settings.png)
+
+> *Screenshot showing the Real Streaming Tag configuration with Stream ID and Server URL fields highlighted*
+
+5. Configure additional settings as needed:
+   - **Event Name**: Select a standard event (e.g., "Page View") or enter a custom event name
+   - **Send common data**: Enable to automatically include page location, referrer, title, etc.
+   - **Add consent state**: Enable if you want to include user consent information
+   - **Event Data** and **User Data**: Add custom event parameters and user properties as needed
+
+6. Configure the **Trigger** for when this tag should fire (e.g., "All Pages", "Page View", custom trigger)
+
+7. Click **"Save"** to save the tag
+
+8. **Submit** your GTM container changes to publish the tag
+
+### Step 4: Optional - Host the Script on Your Domain
+
+The template uses an external JavaScript file (`v6.js`) for sending data. By default, it loads from:
+```
+https://storage.googleapis.com/inject_script/inject/v6.js
+```
+
+**Option 1: Use the Default URL (Recommended for Quick Setup)**
+- No additional configuration needed
+- The script will be loaded from Google Cloud Storage
+
+**Option 2: Host the Script on Your Own Domain (Recommended for Production)**
+
+1. Download the `v6.js` file from `https://storage.googleapis.com/inject_script/inject/v6.js`
+2. Host it on your domain (e.g., `https://example.com/api/v1/fetch/v6.js`)
+3. In the tag configuration, update the **"Data Tag Script URL"** field to point to your domain:
+
+![GTM Data Tag Script URL](docs/images/gtm_data_tag_scripts_url.png)
+
+> *Screenshot showing the Data Tag Script URL field in Settings section*
+
+4. **⚠️ Important**: If you host the script on your own domain, you **must** update the template permissions:
+   - Go to **Templates** → Find **"Real Streaming Tag"** → Click to edit
+   - Navigate to the **"Permissions"** tab
+   - Find the **"inject_script"** permission
+   - Update the URL pattern to include your domain (e.g., `https://example.com/*` or `https://example.com/api/v1/fetch/*.js`)
+   - Click **"Save"** to save the template changes
+   - **Re-import or update the template** in your GTM container if you made changes to the template file
+
+> **Note**: Template permissions control which URLs GTM is allowed to load scripts from. If you don't update the permissions, GTM will block loading the script from your custom domain.
+
+### Step 5: Test the Integration
+
+1. **Preview Mode**: Use GTM's Preview mode to test the tag:
+   - Click **"Preview"** in GTM
+   - Enter your website URL
+   - Verify that the tag fires correctly
+   - Check the browser's Network tab to confirm requests are being sent to your backend
+
+2. **Verify in BigQuery**: 
+   - Go to [Google Cloud Console](https://console.cloud.google.com) → BigQuery → SQL Workspace
+   - Navigate to your dataset and table
+   - Run a query to check if events are being received:
+   ```sql
+   SELECT * FROM `your_project_id.your_dataset_id.your_table_id`
+   ORDER BY event_timestamp DESC
+   LIMIT 10;
+   ```
+
+3. **Check Browser Console**: 
+   - Open browser Developer Tools (F12)
+   - Check for any errors related to script loading or network requests
+   - Verify that cookies are being set correctly (check for `__uid__` cookie)
+
+### Troubleshooting
+
+- **Tag not firing**: Check that the trigger is configured correctly and matches your page conditions
+- **Script loading errors**: Verify the "Data Tag Script URL" is correct and accessible. If using a custom domain, ensure permissions are updated
+- **CORS errors**: Make sure your backend's `APP_CONFIG__CORS__ALLOWED_ORIGINS` includes your website domain
+- **No data in BigQuery**: Check that the Stream ID matches your backend configuration and that the backend service is running and accessible
+
+---
