@@ -72,17 +72,6 @@ class CorsConfig(BaseModel):
         "x-client-geo-city",
     ]
 
-# Cookie setting moved to GTM template - this config is no longer used
-# The __uid__ cookie is now set by the GTM template when the page loads
-# class CookieConfig(BaseModel):
-#     """Configuration for session/tracking cookies."""
-#     max_age: int = 63072000  # 2 years in seconds
-#     secure: bool = True
-#     httponly: bool = True
-#     samesite: str = "none"  # "strict", "lax", or "none"
-
-
-
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(
         env_file=(
@@ -102,8 +91,6 @@ class Settings(BaseSettings):
     writers: WritersConfig
     environment: str | None = None
     cors: CorsConfig
-    # Cookie setting moved to GTM template - CookieConfig no longer needed
-    # cookie: CookieConfig = CookieConfig()
 
 
 settings = Settings()

@@ -1,5 +1,6 @@
 import asyncio
 from concurrent.futures import ThreadPoolExecutor
+from functools import lru_cache
 from typing import NamedTuple
 from src.log_config import logger
 
@@ -26,11 +27,13 @@ class ParsedDeviceInfo(NamedTuple):
     is_bot: bool
 
 
+@lru_cache(maxsize=4096)
 def _parse_user_agent_sync(user_agent: str) -> ParsedDeviceInfo:
     """
     Parse user agent synchronously.
     Returns hashable NamedTuple for proper caching.
     Uses device_detector (Matomo Device Detector) - most accurate library.
+    Cached with LRU cache to avoid re-parsing common user agents.
     """
     try:
         detector = DeviceDetector(user_agent).parse()
