@@ -1,26 +1,29 @@
 from fastapi import Header, Cookie, Path
 from starlette_context import context
-from tldextract import extract
+# Cookie setting moved to GTM template - domain extraction no longer needed
+# from tldextract import extract
 from uuid import uuid4
 
 from src.api.api_v1.streaming.schemas import Payload, RequestData, Geo
 from src.api.api_v1.streaming.dependencies import DeviceParser, TrafficSourceParser
 
 
-async def get_cookie_domain(
-    host: str | None = Header(None)
-) -> str | None:
-    """
-    Extract registered domain from Host header for cookie domain setting.
-    Works like Google Analytics - cookie available on all subdomains.
-    
-    Examples:
-        www.example.com -> example.com
-        api.subdomain.example.com -> example.com
-        localhost:8000 -> None (local development)
-    """
-    domain=extract(host).registered_domain if host else None
-    return domain
+# Cookie setting moved to GTM template - this function is no longer used
+# The __uid__ cookie is now set by the GTM template when the page loads
+# async def get_cookie_domain(
+#     host: str | None = Header(None)
+# ) -> str | None:
+#     """
+#     Extract registered domain from Host header for cookie domain setting.
+#     Works like Google Analytics - cookie available on all subdomains.
+#     
+#     Examples:
+#         www.example.com -> example.com
+#         api.subdomain.example.com -> example.com
+#         localhost:8000 -> None (local development)
+#     """
+#     domain=extract(host).registered_domain if host else None
+#     return domain
 
 
 async def request_handler(

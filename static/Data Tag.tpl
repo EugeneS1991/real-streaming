@@ -699,6 +699,9 @@ if (
   return;
 }
 
+// Ensure __uid__ cookie is set
+ensureUidCookie();
+
 const userAndCustomData = getUserAndCustomDataArray();
 let requestType = determinateRequestType();
 
@@ -1205,6 +1208,35 @@ function addConsentStateData(eventData) {
     security_storage: isConsentGranted('security_storage'),
   };
   return eventData;
+}
+
+// Generate UUID v4-like identifier
+function generateUuid() {
+  // Format: timestamp.random1.random2.random3
+  // Similar to UUID but simpler for GTM sandboxed JS
+  return getTimestampMillis() + 
+    '.' + 
+    generateRandom(100000000, 999999999) + 
+    '.' + 
+    generateRandom(100000000, 999999999) + 
+    '.' + 
+    generateRandom(100000000, 999999999);
+}
+
+// Ensure __uid__ cookie is set (2 years, sameSite: none, secure: true)
+function ensureUidCookie() {
+  const uidCookie = getCookieValues('__uid__')[0];
+  
+  if (!uidCookie) {
+    const newUid = generateUuid();
+    setCookie('__uid__', newUid, {
+      'max-age': 63072000, // 2 years in seconds
+      'secure': true,
+      'sameSite': 'none',
+      'domain': 'auto',
+      'path': '/'
+    });
+  }
 }
 
 function addTempClientId(eventData) {
@@ -2016,6 +2048,10 @@ ___WEB_PERMISSIONS___
             "listItem": [
               {
                 "type": 1,
+                "string": "__uid__"
+              },
+              {
+                "type": 1,
                 "string": "my_streaming"
               },
               {
@@ -2176,6 +2212,53 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 1,
                     "string": "my_streaming"
+                  },
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "*"
+                  },
+                  {
+                    "type": 1,
+                    "string": "any"
+                  },
+                  {
+                    "type": 1,
+                    "string": "any"
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "name"
+                  },
+                  {
+                    "type": 1,
+                    "string": "domain"
+                  },
+                  {
+                    "type": 1,
+                    "string": "path"
+                  },
+                  {
+                    "type": 1,
+                    "string": "secure"
+                  },
+                  {
+                    "type": 1,
+                    "string": "session"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "__uid__"
                   },
                   {
                     "type": 1,
