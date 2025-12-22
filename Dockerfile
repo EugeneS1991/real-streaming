@@ -1,7 +1,7 @@
 # Python image to use.
 FROM python:3.14-slim
 
-# Устанавливаем переменную окружения для обеспечения вывода логов в консоль
+# Set environment variable to ensure logs are output to the console
 ENV PYTHONUNBUFFERED=1
 
 # Set the working directory to /app
@@ -15,7 +15,7 @@ RUN pip install --no-cache-dir --trusted-host pypi.python.org -r requirements.tx
 COPY src/ ./src/
 COPY static/ ./static/
 
-# Указываем команду для запуска приложения обязательно, а так же в основном скрипте, должна быть проверка с указанием на каком хосте будет запускаться приложение
+# Specify the command to run the application. Also, ensure the main script checks which host the application will run on
 CMD ["uvicorn", "src.main:main_app", "--host", "0.0.0.0", "--port", "8080"]
 #CMD ["uvicorn", "src.main:main_app", "--host", "0.0.0.0", "--port", "8080", "--ssl-keyfile", "/cert/localhost+2-key.pem", "--ssl-certfile", "/cert/localhost+2.pem"]
-# ENTRYPOINT vs CMD: назад к основам
+# ENTRYPOINT vs CMD: back to basics
