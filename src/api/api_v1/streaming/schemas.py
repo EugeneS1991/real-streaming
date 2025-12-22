@@ -1,4 +1,4 @@
-import json
+import orjson
 from pydantic import BaseModel, Field, ConfigDict, model_validator, Json
 from datetime import datetime, timezone
 from src.core.utils import utc_now, utc_timestamp, utc_timestamp_micros, utc_date_str
@@ -164,7 +164,7 @@ class Payload(BaseModel):
     @model_validator(mode="before")
     def destination(cls, value):
         if isinstance(value, bytes):
-            return json.loads(value)
+            return orjson.loads(value)
         return value
 
 
