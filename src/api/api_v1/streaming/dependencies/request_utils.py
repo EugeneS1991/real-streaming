@@ -23,7 +23,7 @@ async def request_handler(
     return RequestData(
         **body.model_dump(),
         stream_id=stream_id,
-        user_pseudo_id=uid_cookie,
+        user_pseudo_id=uid_cookie or str(uuid4()),
         device=await DeviceParser.parse(user_agent, accept_language),
         geo=Geo(country=country, region=region, city=city),
         collected_traffic_source=TrafficSourceParser.parse(body.event_params),
