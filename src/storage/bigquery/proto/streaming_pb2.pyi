@@ -6,7 +6,7 @@ from typing import ClassVar as _ClassVar, Iterable as _Iterable, Mapping as _Map
 DESCRIPTOR: _descriptor.FileDescriptor
 
 class StreamingMessage(_message.Message):
-    __slots__ = ["date", "event_timestamp", "event_name", "event_params", "user_id", "user_pseudo_id", "privacy_info", "user_properties", "device", "geo", "app_info", "collected_traffic_source", "stream_id", "ecommerce", "items", "ip", "synced_at_utc_", "synced_at_micros_", "subscription_name", "message_id", "publish_time", "attributes"]
+    __slots__ = ["date", "event_timestamp", "event_name", "event_params", "user_id", "user_pseudo_id", "privacy_info", "user_properties", "device", "geo", "app_info", "collected_traffic_source", "stream_id", "ecommerce", "items", "ip", "event_id", "synced_at_micros_", "subscription_name", "message_id", "publish_time", "attributes"]
     class Value(_message.Message):
         __slots__ = ["string_value", "int_value", "float_value"]
         STRING_VALUE_FIELD_NUMBER: _ClassVar[int]
@@ -239,7 +239,7 @@ class StreamingMessage(_message.Message):
     ECOMMERCE_FIELD_NUMBER: _ClassVar[int]
     ITEMS_FIELD_NUMBER: _ClassVar[int]
     IP_FIELD_NUMBER: _ClassVar[int]
-    SYNCED_AT_UTC__FIELD_NUMBER: _ClassVar[int]
+    EVENT_ID_FIELD_NUMBER: _ClassVar[int]
     SYNCED_AT_MICROS__FIELD_NUMBER: _ClassVar[int]
     SUBSCRIPTION_NAME_FIELD_NUMBER: _ClassVar[int]
     MESSAGE_ID_FIELD_NUMBER: _ClassVar[int]
@@ -261,10 +261,10 @@ class StreamingMessage(_message.Message):
     ecommerce: StreamingMessage.Ecommerce
     items: _containers.RepeatedCompositeFieldContainer[StreamingMessage.Items]
     ip: str
-    synced_at_utc_: str
+    event_id: str
     synced_at_micros_: int
     subscription_name: str
     message_id: str
     publish_time: str
     attributes: str
-    def __init__(self, date: _Optional[str] = ..., event_timestamp: _Optional[int] = ..., event_name: _Optional[str] = ..., event_params: _Optional[_Iterable[_Union[StreamingMessage.Event_params, _Mapping]]] = ..., user_id: _Optional[str] = ..., user_pseudo_id: _Optional[str] = ..., privacy_info: _Optional[_Union[StreamingMessage.Privacy_info, _Mapping]] = ..., user_properties: _Optional[_Iterable[_Union[StreamingMessage.User_properties, _Mapping]]] = ..., device: _Optional[_Union[StreamingMessage.Device, _Mapping]] = ..., geo: _Optional[_Union[StreamingMessage.Geo, _Mapping]] = ..., app_info: _Optional[_Union[StreamingMessage.App_info, _Mapping]] = ..., collected_traffic_source: _Optional[_Union[StreamingMessage.Collected_traffic_source, _Mapping]] = ..., stream_id: _Optional[int] = ..., ecommerce: _Optional[_Union[StreamingMessage.Ecommerce, _Mapping]] = ..., items: _Optional[_Iterable[_Union[StreamingMessage.Items, _Mapping]]] = ..., ip: _Optional[str] = ..., synced_at_utc_: _Optional[str] = ..., synced_at_micros_: _Optional[int] = ..., subscription_name: _Optional[str] = ..., message_id: _Optional[str] = ..., publish_time: _Optional[str] = ..., attributes: _Optional[str] = ...) -> None: ...
+    def __init__(self, date: _Optional[str] = ..., event_timestamp: _Optional[int] = ..., event_name: _Optional[str] = ..., event_params: _Optional[_Iterable[_Union[StreamingMessage.Event_params, _Mapping]]] = ..., user_id: _Optional[str] = ..., user_pseudo_id: _Optional[str] = ..., privacy_info: _Optional[_Union[StreamingMessage.Privacy_info, _Mapping]] = ..., user_properties: _Optional[_Iterable[_Union[StreamingMessage.User_properties, _Mapping]]] = ..., device: _Optional[_Union[StreamingMessage.Device, _Mapping]] = ..., geo: _Optional[_Union[StreamingMessage.Geo, _Mapping]] = ..., app_info: _Optional[_Union[StreamingMessage.App_info, _Mapping]] = ..., collected_traffic_source: _Optional[_Union[StreamingMessage.Collected_traffic_source, _Mapping]] = ..., stream_id: _Optional[int] = ..., ecommerce: _Optional[_Union[StreamingMessage.Ecommerce, _Mapping]] = ..., items: _Optional[_Iterable[_Union[StreamingMessage.Items, _Mapping]]] = ..., ip: _Optional[str] = ..., event_id: _Optional[str] = ..., synced_at_micros_: _Optional[int] = ..., subscription_name: _Optional[str] = ..., message_id: _Optional[str] = ..., publish_time: _Optional[str] = ..., attributes: _Optional[str] = ...) -> None: ...

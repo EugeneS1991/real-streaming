@@ -2,7 +2,7 @@ import orjson
 from pydantic import BaseModel, Field, ConfigDict, model_validator, Json
 from datetime import datetime, timezone
 from src.core.utils import utc_now, utc_timestamp, utc_timestamp_micros, utc_date_str
-
+import uuid
 class EventParamsValue(BaseModel):
     string_value: str | None = None
     int_value: int | None = None
@@ -137,7 +137,7 @@ class DataToInsert(BaseModel):
     ecommerce: Ecommerce | None
     items: list[Items] | None
     ip: str | None
-    synced_at_utc_: str = Field(default_factory=lambda: utc_now().isoformat())
+    event_id: str = Field(default_factory=lambda: str(uuid.uuid4()))
     synced_at_micros_: int = Field(default_factory=utc_timestamp_micros)
     subscription_name: str | None = None
     message_id: str | None = None
@@ -160,6 +160,7 @@ class Payload(BaseModel):
     app_info: AppInfo | None = None
     ecommerce: Ecommerce | None = None
     items: list[Items] | None = None
+    event_id: str | None = None
 
     @model_validator(mode="before")
     def destination(cls, value):

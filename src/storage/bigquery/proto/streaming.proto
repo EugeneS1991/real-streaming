@@ -146,7 +146,7 @@ message StreamingMessage {
   optional Ecommerce ecommerce = 14;
   repeated Items items = 15;
   optional string ip = 16;
-  optional string synced_at_utc_ = 17;
+  optional string event_id = 17;
   optional int64 synced_at_micros_ = 18;
   optional string subscription_name = 19;
   optional string message_id = 20;

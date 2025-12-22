@@ -183,7 +183,7 @@ class StreamingSchema:
             ),
         ),
         bigquery.SchemaField("ip", "STRING", "NULLABLE"),
-        bigquery.SchemaField("synced_at_utc_", "TIMESTAMP", "NULLABLE"),
+        bigquery.SchemaField("event_id", "STRING", "NULLABLE"),
         bigquery.SchemaField("synced_at_micros_", "INTEGER", "NULLABLE"),
         bigquery.SchemaField("subscription_name", "STRING", "NULLABLE"),
         bigquery.SchemaField("message_id", "STRING", "NULLABLE"),
