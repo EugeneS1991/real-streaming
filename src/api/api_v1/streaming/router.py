@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Response, Depends
+from fastapi import APIRouter, Depends
 from src.api.api_v1.streaming.schemas import DataToInsert, RequestData
 from src.api.api_v1.streaming.dependencies import request_handler
 from src.log_config import logger
@@ -11,7 +11,6 @@ router = APIRouter()
 
 @router.post("/{stream_id}")
 async def streaming(
-    response: Response,
     data: RequestData | None = Depends(request_handler),
     streamer: StreamerProtocol = Depends(get_streaming_service),
 ):
