@@ -958,7 +958,8 @@ function buildPrivacyInfo() {
 function buildPayloadSchema(streamId) {
   let payload = {
     event_name: getEventName(data),
-    v: makeNumber(data.protocol_version)
+    v: makeNumber(data.protocol_version),
+    event_id: generateUniqueEventId() // Automatically generate and include unique event ID
   };
 
   // Build event_params array
@@ -1208,6 +1209,39 @@ function addConsentStateData(eventData) {
     security_storage: isConsentGranted('security_storage'),
   };
   return eventData;
+}
+
+// Helper functions for unique event ID generation
+function getGtmUniqueEventId() {
+    let gtmId = copyFromDataLayer('gtm.uniqueEventId')  || 0;
+    return gtmId >= 0 ? gtmId : '00';
+}
+
+function getBrowserId() {
+    let gtmBrowserId =  copyFromWindow('gtmBrowserId');
+
+    if (!gtmBrowserId) {
+        gtmBrowserId = getTimestampMillis() + generateRandom(100000, 999999);
+        setInWindow('gtmBrowserId', gtmBrowserId, false);
+    }
+
+    return gtmBrowserId;
+}
+
+function getPageLoadId() {
+  let eventId = copyFromWindow('gtmPageLoadId');
+
+  if (!eventId) {
+    eventId = getTimestampMillis() + generateRandom(100000, 999999);
+    setInWindow('gtmPageLoadId', eventId, false);
+  }
+
+  return eventId;
+}
+
+// Generate unique event ID
+function generateUniqueEventId() {
+  return getBrowserId() + '_' + getPageLoadId() + getGtmUniqueEventId();
 }
 
 // Generate UUID v4-like identifier
@@ -1789,6 +1823,84 @@ ___WEB_PERMISSIONS___
                   {
                     "type": 1,
                     "string": "gtm_dataTagTempClientId"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "gtmBrowserId"
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": true
+                  },
+                  {
+                    "type": 8,
+                    "boolean": false
+                  }
+                ]
+              },
+              {
+                "type": 3,
+                "mapKey": [
+                  {
+                    "type": 1,
+                    "string": "key"
+                  },
+                  {
+                    "type": 1,
+                    "string": "read"
+                  },
+                  {
+                    "type": 1,
+                    "string": "write"
+                  },
+                  {
+                    "type": 1,
+                    "string": "execute"
+                  }
+                ],
+                "mapValue": [
+                  {
+                    "type": 1,
+                    "string": "gtmPageLoadId"
                   },
                   {
                     "type": 8,
