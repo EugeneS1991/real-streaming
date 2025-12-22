@@ -1,4 +1,4 @@
-import json
+import orjson
 from typing import Any
 from concurrent import futures
 from google.cloud import pubsub_v1
@@ -48,26 +48,25 @@ class PubSubStreamer(StreamerProtocol):
         Returns immediately (non-blocking). Failures are logged via callback.
         """
         try:
-            # Serialize to JSON
-            data_str = json.dumps(data)
-            data_bytes = data_str.encode("utf-8")
+            # Serialize to JSON (returns bytes)
+            data_bytes = orjson.dumps(data)
 
             # Publish (returns Future immediately)
             future = self.publisher.publish(self.topic_path, data_bytes)
 
             # Add callback for error logging (fire-and-forget)
-            future.add_done_callback(self._get_callback(data_str))
+            future.add_done_callback(self._get_callback(data_bytes))
 
         except Exception as e:
             logger.error(f"Failed to schedule publish: {e}")
 
-    def _get_callback(self, data_preview: str):
+    def _get_callback(self, data_preview: bytes):
         def callback(future):
             try:
                 future.result(timeout=10)  # Check result, throws exception on failure
             except Exception as e:
                 # Log only if failed
-                logger.error(f"PubSub publish failed: {e}. Data sample: {data_preview[:100]}...")
+                logger.error(f"PubSub publish failed: {e}. Data sample: {data_preview[:100].decode('utf-8', errors='ignore')}...")
 
         return callback
 
